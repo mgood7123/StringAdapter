@@ -6,6 +6,8 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <stdexcept>
+#include <memory>
 
 namespace StringAdapter {
 /*    
@@ -30,9 +32,9 @@ and int to T
 template decleration for classes wishing to use this:
     
 template <
-    typename char_t,
+    typename T,
     typename adapter_t,
-    typename AdapterMustExtendBasicStringAdapter = std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type
+    typename AdapterMustExtendBasicStringAdapter = std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type
 >
 
 // ...
@@ -52,30 +54,30 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 // TYPEDEF
 
     template <
-        typename char_t,
+        typename T,
         typename adapter_t,
-        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type
+        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type
     >
     // WILL NOT COMPILE
-    typedef A<char_t, adapter_t> Deps;
+    typedef A<T, adapter_t> Deps;
 
     template <
-        typename char_t,
+        typename T,
         typename adapter_t,
-        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type
+        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type
     >
     // WILL COMPILE
-    using Deps = A<char_t, adapter_t>;
+    using Deps = A<T, adapter_t>;
 
 
 // EXAMPLE
 
     template <
-        typename char_t,
+        typename T,
         typename adapter_t,
-        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type
+        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type
     >
-    typedef Tuple2<Set<const Named<Patch*, char_t, adapter_t>>, Set<const Named<Patch*, char_t, adapter_t>>> Deps;
+    typedef Tuple2<Set<const Named<Patch*, T, adapter_t>>, Set<const Named<Patch*, T, adapter_t>>> Deps;
 
     using Deps_T = Deps<char, StringAdapter::CharAdapter>;
 
@@ -84,9 +86,9 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
     template <
         typename T,
-        typename char_t,
+        typename T,
         typename adapter_t,
-        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type
+        typename AdapterMustExtendBasicStringAdapter = typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type
     >
     struct Named {
         Named() {
@@ -97,8 +99,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
     template <typename T>
     using Named_T = Named<T, char, StringAdapter::CharAdapter>;
 
-    template <typename T, typename char_t, typename adapter_t>
-    struct Named<T*, char_t, adapter_t, typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<char_t>, adapter_t>::value>::type> {
+    template <typename T, typename T, typename adapter_t>
+    struct Named<T*, T, adapter_t, typename std::enable_if<std::is_base_of<StringAdapter::BasicStringAdapter<T>, adapter_t>::value>::type> {
         Named() {
             puts("T*");
         }
@@ -117,18 +119,19 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
     struct BasicStringAdapter {
         
         typedef T TYPE;
+
+        mutable std::shared_ptr<const T> new_line;
+        mutable std::shared_ptr<const T> eof;
+
+        const T & get_new_line() const {
+            return *new_line;
+        }
         
-        BasicStringAdapter() {} // default constructor
-        
-        BasicStringAdapter(const T*ptr) {
-            puts("BasicStringAdapter( T * ptr ) has not been overridden");
-            std::terminate();
-        };
-        
-        BasicStringAdapter(const T*ptr, const size_t length) {
-            puts("BasicStringAdapter( T * ptr , size_t length ) has not been overridden");
-            std::terminate();
-        };
+        const T & get_end_of_file() const {
+            return *eof;
+        }
+
+        virtual BasicStringAdapter<T>* clone() = 0;
         
         virtual const T & get_item_at_index(const size_t index) const = 0;
         
@@ -143,8 +146,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         virtual const std::vector<T>* data_as_vector() const = 0;
         
         virtual const size_t length() const = 0;
-        
-        virtual const size_t line_count() const = 0;
         
         virtual void resize(const size_t capacity) = 0;
         
@@ -229,8 +230,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         
         virtual void erase_(const size_t pos, const size_t length) = 0;
         
-        virtual const T get_new_line() const = 0;
-        
         virtual ~BasicStringAdapter() {};
         
         const size_t clamp_pos(const size_t pos) const {
@@ -248,6 +247,53 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         const size_t clamp_length(const size_t length, const size_t clamped_pos, const size_t len) const {
             return clamped_pos == length ? 0 : len == -1 ? length : clamped_pos + len >= length ? length : clamped_pos + len;
         }
+
+        virtual const void deleteSelf() const = 0;
+        virtual const BasicStringAdapter<T>* newAdapter() const = 0;
+        virtual const BasicStringAdapter<T>* newAdapter(const T* ptr) const = 0;
+        virtual const BasicStringAdapter<T>* newAdapter(const T* ptr, const size_t length) const = 0;
+
+        const std::vector<std::unique_ptr<BasicStringAdapter<T>>> split(const T & splitter) const {
+            std::vector<BasicStringAdapter<T>*> vec;
+            BasicStringAdapter<T>* c = newAdapter();
+            for (const T & t : *this) {
+                if (t == splitter) {
+                    vec.push_back(make_unique(c));
+                    c = newAdapter();
+                } else {
+                    T s[2] = { t, get_end_of_file() };
+                    BasicStringAdapter<T>* tmp = newAdapter(s, 1);
+                    c->append_(*tmp);
+                    tmp->deleteSelf();
+                }
+            }
+            vec.push_back(c);
+            return vec;
+        }
+
+        const std::vector<std::unique_ptr<BasicStringAdapter<T>>> lines() const {
+            const size_t len = length();
+            if (len == 0) {
+                return {};
+            }
+
+            return split(get_new_line());
+        }
+
+        const size_t line_count() const {
+            return lines().size();
+        }
+
+        const bool operator == (const T * other) const {
+            auto * data_ = data();
+            bool r = mem_eq(data_, other, length(), strlen(other)) == 0;
+            if (data_is_allocated()) delete[] data_;
+            return r;
+        }
+
+        const bool operator != (const T * other) const {
+            return !(*this == other);
+        }
     };
     
 #define BASIC_STRING_ADAPTER_USING_BASE(BASE) \
@@ -258,13 +304,10 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::data_is_allocated; \
         using BASE::data_as_vector; \
         using BASE::length; \
-        using BASE::line_count; \
         using BASE::resize; \
         using BASE::size; \
         using BASE::c_str; \
         using BASE::c_str_is_allocated; \
-        using BASE::mem_eq; \
-        using BASE::mem_cpy; \
         using BASE::append_; \
         using BASE::insert_; \
         using BASE::replace_; \
@@ -272,20 +315,73 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::clamp_pos; \
         using BASE::clamp_length; \
         using BASE::get_new_line; \
+        using BASE::get_end_of_file; \
+        using BASE::clone; \
+        using BASE::lines; \
+        using BASE::split; \
+        using BASE::line_count; \
+        using BASE::mem_eq; \
+        using BASE::mem_cpy; \
+        using BASE::operator==; \
+        using BASE::operator!=; \
+        using BASE::new_line; \
+        using BASE::eof; \
 
 #define BASIC_STRING_ADAPTER_USING(BASE) \
         BASIC_STRING_ADAPTER_USING_BASE(BASE) \
         using BASE::operator=; \
-        using BASE::operator==; \
-        using BASE::operator!=; \
         using BASE::init; \
-        using BASE::split; \
-        using BASE::lines; \
         using BASE::begin; \
         using BASE::end; \
 
+#define INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(ITEM) std::shared_ptr<T>(new T(ITEM))
+
+#define BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(NAME, T) \
+        NAME(const T & new_line, const T & eof) { \
+            init(nullptr, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
+        } \
+\
+        NAME(const T * ptr, const T & new_line, const T & eof) { \
+            init(ptr, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
+        } \
+\
+        NAME(const T * ptr, const size_t length, const T & new_line, const T & eof) { \
+            init(ptr, length, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
+        } \
+\
+        NAME(const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+            init(nullptr, new_line, eof); \
+        } \
+\
+        NAME(const T * ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+            init(ptr, new_line, eof); \
+        } \
+\
+        NAME(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+            init(ptr, length, new_line, eof); \
+        } \
+\
+        void init(const T * ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+\
+            if (ptr == nullptr) { \
+                init(nullptr, 0, new_line, eof); \
+                return; \
+            } \
+\
+            size_t length = 0; \
+\
+            while(true) { \
+                if (ptr[length] == *eof) { \
+                    break; \
+                } \
+                length++; \
+            } \
+\
+            init(ptr, length, new_line, eof); \
+        }
+
     // a reverse string
-    template<typename T, typename DERIVED>
+    template<typename T>
     struct ListAdapter : public BasicStringAdapter<T> {
         mutable std::list<T> list;
         mutable size_t len;
@@ -317,75 +413,46 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return cend();
         }
 
-        ListAdapter() {
-            init(nullptr);
-        }
-        
-        ListAdapter(const T * ptr) {
-            init(ptr);
-        }
-        
-        ListAdapter(const T * ptr, const size_t length) {
-            init(ptr, length);
-        }
+        BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ListAdapter, T)
         
         ListAdapter(const ListAdapter & other) {
             list = other.list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
         }
         
         const ListAdapter & operator=(const ListAdapter & other) const {
             list = other.list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
         
         ListAdapter(ListAdapter && other) {
             list = other.list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
         }
         
         const ListAdapter & operator=(ListAdapter && other) const {
             list = other.list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
-
-        void init(const T * ptr) {
-            
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
-            
-            if (ptr == nullptr) {
-                this->len = 0;
-                this->list = {};
-                this->list.emplace_back(eof);
-                return;
-            }
-            
-            size_t length = 0;
-            
-            while(true) {
-                if (ptr[length] == eof) {
-                    break;
-                }
-                length++;
-            }
-            
-            init(ptr, length);
-            
-        }
         
-        void init(const T * ptr, const size_t length) {
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
+        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+            this->new_line = new_line;
+            this->eof = eof;
             
             if (ptr == nullptr || length == 0) {
                 this->len = 0;
                 this->list = {};
-                this->list.emplace_back(eof);
+                this->list.emplace_back(get_end_of_file());
                 return;
             }
             
@@ -395,7 +462,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 for(size_t s = 0; s < length; s++) {
                     this->list.emplace_back(ptr[s]);
                 }
-                this->list.emplace_back(eof);
+                this->list.emplace_back(get_end_of_file());
             }
         }
 
@@ -423,36 +490,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         const std::vector<T>* data_as_vector() const override {
             return nullptr;
-        }
-
-        const std::vector<DERIVED> split(const T & splitter) const {
-            std::vector<DERIVED> vec;
-            const T eof = static_cast<const DERIVED*>(this)->get_end_of_file();
-            DERIVED c;
-            for (const T & t : *this) {
-                if (t == splitter) {
-                    vec.push_back(c);
-                    c = DERIVED();
-                } else {
-                    T s[2] = { t, eof };
-                    c.append_(DERIVED(s, 1));
-                }
-            }
-            vec.push_back(c);
-            return vec;
-        }
-
-        const std::vector<DERIVED> lines() const {
-            const size_t len = length();
-            if (len == 0) {
-                return {};
-            }
-
-            return split(get_new_line());
-        }
-
-        const size_t line_count() const override {
-            return lines().size();
         }
 
         void resize(const size_t capacity) override {
@@ -511,36 +548,24 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             }
         }
         
+        const void deleteSelf() const override {
+            delete (ListAdapter<T>*) this;
+        }
+
         ~ListAdapter() override {
         }
     };
 
     // a reverse string
-    template<typename T, typename DERIVED>
+    template<typename T>
     struct ForwardListAdapter : public BasicStringAdapter<T> {
         mutable std::forward_list<T> forward_list;
         mutable size_t len;
+        mutable std::function<const std::pair<T, T>()> new_line__eof__func;
 
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
 
-        ForwardListAdapter() {
-            init(nullptr);
-        }
-        
-        ForwardListAdapter(const T * ptr) {
-            init(ptr);
-        }
-        
-        ForwardListAdapter(const T * ptr, const size_t length) {
-            init(ptr, length);
-        }
-        
-        ForwardListAdapter(const ForwardListAdapter & other) {
-            forward_list = other.forward_list;
-            len = other.len;
-        }
-        
         typename std::forward_list<T>::iterator begin() {
             return forward_list.begin();
         }
@@ -565,68 +590,56 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return cend();
         }
 
+        BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ForwardListAdapter, T)
+
+        ForwardListAdapter(const ForwardListAdapter & other) {
+            forward_list = other.forward_list;
+            len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
+        }
+        
         const ForwardListAdapter & operator=(const ForwardListAdapter & other) const {
             forward_list = other.forward_list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
         
         ForwardListAdapter(ForwardListAdapter && other) {
             forward_list = other.forward_list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
         }
         
         const ForwardListAdapter & operator=(ForwardListAdapter && other) const {
             forward_list = other.forward_list;
             len = other.len;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
 
-        void init(const T * ptr) {
-            
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
-            
-            if (ptr == nullptr) {
-                this->len = 0;
-                this->forward_list = {};
-                this->forward_list.emplace_front(eof);
-                return;
-            }
-            
-            size_t length = 0;
-            
-            while(true) {
-                if (ptr[length] == eof) {
-                    break;
-                }
-                length++;
-            }
-            
-            init(ptr, length);
-            
-        }
-        
-        void init(const T * ptr, const size_t length) {
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
+        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+            this->new_line = new_line;
+            this->eof = eof;
             
             if (ptr == nullptr || length == 0) {
                 this->forward_list = {};
-                this->forward_list.emplace_front(eof);
+                this->forward_list.emplace_front(get_end_of_file());
                 this->len = 0;
                 return;
             }
-            
+
             this->forward_list = {};
             len = length;
             if (length != 0) {
                 for(size_t s = 0; s < length; s++) {
                     this->forward_list.emplace_front(ptr[s]);
                 }
-                this->forward_list.emplace_front(eof);
+                this->forward_list.emplace_front(get_end_of_file());
             }
         }
 
@@ -654,36 +667,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         const std::vector<T>* data_as_vector() const override {
             return nullptr;
-        }
-
-        const std::vector<DERIVED> split(const T & splitter) const {
-            std::vector<DERIVED> vec;
-            const T eof = static_cast<const DERIVED*>(this)->get_end_of_file();
-            DERIVED c;
-            for (const T & t : *this) {
-                if (t == splitter) {
-                    vec.push_back(c);
-                    c = DERIVED();
-                } else {
-                    T s[2] = { t, eof };
-                    c.append_(DERIVED(s, 1));
-                }
-            }
-            vec.push_back(c);
-            return vec;
-        }
-
-        const std::vector<DERIVED> lines() const {
-            const size_t len = length();
-            if (len == 0) {
-                return {};
-            }
-
-            return split(get_new_line());
-        }
-
-        const size_t line_count() const override {
-            return lines().size();
         }
 
         void resize(const size_t capacity) override {
@@ -743,35 +726,23 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 len = len_ - (l - p);
             }
         }
-        
+
+        const void deleteSelf() const override {
+            delete (ForwardListAdapter<T>*) this;
+        }
+
         ~ForwardListAdapter() override {
         }
     };
 
-    template<typename T, typename DERIVED>
+    template<typename T>
     struct VectorAdapter : public BasicStringAdapter<T> {
-        
         mutable std::vector<T> vector;
+        mutable std::function<const std::pair<T, T>()> new_line__eof__func;
         
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
 
-        VectorAdapter() {
-            init(nullptr);
-        }
-        
-        VectorAdapter(const T * ptr) {
-            init(ptr);
-        }
-        
-        VectorAdapter(const T * ptr, const size_t length) {
-            init(ptr, length);
-        }
-        
-        VectorAdapter(const VectorAdapter & other) {
-            vector = other.vector;
-        }
-        
         typename std::vector<T>::iterator begin() {
             return vector.begin();
         }
@@ -796,53 +767,41 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return cend();
         }
 
+        BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(VectorAdapter, T)
+
+        VectorAdapter(const VectorAdapter & other) {
+            vector = other.vector;
+            new_line = other.new_line;
+            eof = other.eof;
+        }
+        
         const VectorAdapter & operator=(const VectorAdapter & other) const {
             vector = other.vector;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
         
         VectorAdapter(VectorAdapter && other) {
             vector = other.vector;
+            new_line = other.new_line;
+            eof = other.eof;
         }
         
         const VectorAdapter & operator=(VectorAdapter && other) const {
             vector = other.vector;
+            new_line = other.new_line;
+            eof = other.eof;
             return *this;
         }
 
-        void init(const T * ptr) {
-            
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
-            
-            if (ptr == nullptr) {
-                this->vector = std::move(std::vector<T>(1));
-                this->vector[0] = eof;
-                return;
-            }
-            
-            size_t length = 0;
-            
-            while(true) {
-                if (ptr[length] == eof) {
-                    break;
-                }
-                length++;
-            }
-            
-            init(ptr, length);
-            
-        }
-        
-        void init(const T * ptr, const size_t length) {
-            const T eof = static_cast<DERIVED*>(this)->get_end_of_file();
-            
-            const T empty[1] { eof };
-            
+        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+            this->new_line = new_line;
+            this->eof = eof;
+
             if (ptr == nullptr || length == 0) {
                 this->vector = std::move(std::vector<T>(1));
-                this->vector[0] = eof;
+                this->vector[0] = get_end_of_file();
                 return;
             }
             
@@ -851,7 +810,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 for(size_t s = 0; s < length; s++) {
                     vector[s] = ptr[s];
                 }
-                vector[length] = eof;
+                vector[length] = get_end_of_file();
             }
         }
         
@@ -875,36 +834,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return vector.size()-1;
         }
         
-        const std::vector<DERIVED> split(const T & splitter) const {
-            std::vector<DERIVED> vec;
-            const T eof = static_cast<const DERIVED*>(this)->get_end_of_file();
-            DERIVED c;
-            for (const T & t : *this) {
-                if (t == splitter) {
-                    vec.push_back(c);
-                    c = DERIVED();
-                } else {
-                    T s[2] = { t, eof };
-                    c.append_(DERIVED(s, 1));
-                }
-            }
-            vec.push_back(c);
-            return vec;
-        }
-
-        const std::vector<DERIVED> lines() const {
-            const size_t len = length();
-            if (len == 0) {
-                return {};
-            }
-
-            return split(get_new_line());
-        }
-        
-        const size_t line_count() const override {
-            return lines().size();
-        }
-
         void resize(const size_t capacity) override {
             const size_t len_ = length();
             if (capacity != len_) {
@@ -961,12 +890,13 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
     };
     
-    template <typename T, typename DERIVED>
-    struct ResizingVectorAdapter : public VectorAdapter<T, DERIVED> {
+    template <typename T>
+    struct ResizingVectorAdapter : public VectorAdapter<T> {
         
-        using BASE = VectorAdapter<T, DERIVED>;
+        using BASE = VectorAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
         using BASE::vector;
+        using BASE::new_line__eof__func;
         
         void insert_(const BasicStringAdapter<T> & what, const size_t pos) override {
             vector.reserve(length() + what.length() + 1);
@@ -982,34 +912,28 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
     };
     
-#define ADAPTER_IMPL(ADAPTER) template <typename char_t, typename UNUSED = void> \
-struct ADAPTER##_impl : ADAPTER<char_t, ADAPTER##_impl<char_t, UNUSED>> { \
-    using BASE = ADAPTER<char_t, ADAPTER##_impl<char_t, UNUSED>>; \
+#define CHAR_ADAPTER_IMPL(ADAPTER) \
+template <typename T, typename UNUSED = void> \
+struct ADAPTER##_impl : ADAPTER<T> { \
+\
+    using BASE = ADAPTER<T>; \
     BASIC_STRING_ADAPTER_USING(BASE); \
 \
-    ADAPTER##_impl(const std::string & str) { \
-        init(str.data(), str.length()); \
-    } \
+    ADAPTER##_impl() : BASE('\n', '\0') {} \
 \
-    const bool operator == (const char * other) const { \
-        auto * data_ = data(); \
-        bool r = mem_eq(data_, other, length(), strlen(other)) == 0; \
-        if (data_is_allocated()) delete[] data_; \
-        return r; \
-    } \
+    ADAPTER##_impl(const T * ptr) : BASE(ptr, '\n', '\0') {} \
 \
-    const bool operator != (const char * other) const { \
-        return !(*this == other); \
-    } \
+    ADAPTER##_impl(const T * ptr, const size_t length) : BASE(ptr, length, '\n', '\0') {} \
+\
+    ADAPTER##_impl(const std::string & str) : ADAPTER##_impl(str.data(), str.size()) {} \
 \
     void print(const char * str) \
     { \
         const size_t len = size(); \
         std::cout << str << ". (size (excluding null): " << len << ") "; \
-        const char_t * data_ = data(); \
-        const char_t eof = get_end_of_file(); \
+        const T * data_ = data(); \
         for (size_t i = 0; i <= len; i++) { \
-            if (data_[i] == eof) { \
+            if (data_[i] == get_end_of_file()) { \
                 std::cout << "\\0" << ' '; \
             } else { \
                 std::cout << data_[i] << ' '; \
@@ -1023,31 +947,31 @@ struct ADAPTER##_impl : ADAPTER<char_t, ADAPTER##_impl<char_t, UNUSED>> { \
         append(s.data(), s.length()); \
     } \
 \
-    void append(const char_t * s) { \
-        append_(ADAPTER##_impl<char_t, UNUSED>(s, strlen(s))); \
+    void append(const T * s) { \
+        append_(ADAPTER##_impl<T, UNUSED>(s, strlen(s))); \
     } \
 \
     void insert(const size_t pos, const size_t len, const std::string & s) { \
-        insert_(ADAPTER##_impl<char_t, UNUSED>(s.data(), s.length()), pos, len); \
+        insert_(ADAPTER##_impl<T, UNUSED>(s.data(), s.length()), pos, len); \
     } \
 \
     void insert(const size_t pos, const size_t len, const char * s) { \
-        insert_(ADAPTER##_impl<char_t, UNUSED>(s, strlen(s)), pos, len); \
+        insert_(ADAPTER##_impl<T, UNUSED>(s, strlen(s)), pos, len); \
     } \
 \
     void replace(const size_t pos, const size_t len, const std::string & s) { \
-        replace_(ADAPTER##_impl<char_t, UNUSED>(s.data(), s.length()), pos, len); \
+        replace_(ADAPTER##_impl<T, UNUSED>(s.data(), s.length()), pos, len); \
     } \
 \
     void replace(const size_t pos, const size_t len, const char * s) { \
-        replace_(ADAPTER##_impl<char_t, UNUSED>(s, strlen(s)), pos, len); \
+        replace_(ADAPTER##_impl<T, UNUSED>(s, strlen(s)), pos, len); \
     } \
 \
     void erase(const size_t pos, const size_t len) { \
         erase_(pos, len); \
     } \
 \
-    const char_t * c_str() const override { \
+    const T * c_str() const override { \
         return data(); \
     } \
 \
@@ -1055,19 +979,31 @@ struct ADAPTER##_impl : ADAPTER<char_t, ADAPTER##_impl<char_t, UNUSED>> { \
         return data_is_allocated(); \
     } \
 \
-    const char_t get_new_line() const override { \
-        return '\n'; \
+    const void deleteSelf() const override { \
+        delete (ADAPTER##_impl<T, UNUSED>*) this; \
     } \
 \
-    const char_t get_end_of_file() const { \
-        return '\0'; \
+    ADAPTER##_impl<T, UNUSED>* clone() override { \
+        return new ADAPTER##_impl<T, UNUSED>(*this); \
+    } \
+\
+    const ADAPTER##_impl<T, UNUSED>* newAdapter() const override { \
+        return new ADAPTER##_impl<T, UNUSED>(); \
+    } \
+\
+    const ADAPTER##_impl<T, UNUSED>* newAdapter(const T* ptr) const override { \
+        return new ADAPTER##_impl<T, UNUSED>(ptr); \
+    } \
+\
+    const ADAPTER##_impl<T, UNUSED>* newAdapter(const T* ptr, const size_t length) const override { \
+        return new ADAPTER##_impl<T, UNUSED>(ptr, length); \
     } \
 }
 
-    ADAPTER_IMPL(VectorAdapter);
-    ADAPTER_IMPL(ResizingVectorAdapter);
-    ADAPTER_IMPL(ListAdapter);
-    ADAPTER_IMPL(ForwardListAdapter);
+    CHAR_ADAPTER_IMPL(VectorAdapter);
+    CHAR_ADAPTER_IMPL(ResizingVectorAdapter);
+    CHAR_ADAPTER_IMPL(ListAdapter);
+    CHAR_ADAPTER_IMPL(ForwardListAdapter);
 
     using CharVectorAdapter = VectorAdapter_impl<char, void>;
     using CharResizingVectorAdapter = ResizingVectorAdapter_impl<char, void>;
