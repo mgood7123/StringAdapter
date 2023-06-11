@@ -324,10 +324,9 @@ TEST(ListAdapter_Core, equals1) {
 }
 
 TEST(ForwardListAdapter_Core, equals1) {
-    CharListAdapter a;
+    CharForwardListAdapter a;
     a.append("hello");
-    const char b[] = {'\0', 'o', 'l', 'l', 'e', 'h'};
-    ASSERT_EQ(a, b);
+    ASSERT_EQ(a, "olleh");
 }
 
 TEST(ResizingVectorAdapter_Core, equals2) {

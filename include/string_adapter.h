@@ -10,7 +10,7 @@
 #include <memory>
 
 namespace StringAdapter {
-/*    
+/*
 
 reasoning:
 
@@ -41,9 +41,9 @@ template <
 
 // _T is expected for the default char* implementation of classes accepting StringAdapter
 //
-// this is optional but highly recommended as ( char* , std::string ) based data is extremely common
+// this is optional but highly recommended as ( char* / std::string ) based data is extremely common
 //
-//   also QT variants ( QChar , QString ) are very common in QT based libs/apps (eg KDE, QTCreator, ect )
+//   also QT variants ( QChar / QString ) are very common in QT based libs/apps (eg KDE, QTCreator, ect )
 //     so maybe provide a _QT version as well:
 //
 //         using YourClass_QT = YourClass<QChar, StringAdapter::CharAdapter_impl<QChar, void>>;
@@ -154,9 +154,11 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
         
         const bool operator == (const BasicStringAdapter<T> & other) const {
-            auto * data_ = data();
-            auto r = mem_eq(data_, other.data(), length(), other.length()) == 0;
+            auto* data_ = data();
+            auto* other_data_ = other.data();
+            auto r = mem_eq(data_, other_data_, length(), other.length()) == 0;
             if (data_is_allocated()) delete[] data_;
+            if (other.data_is_allocated()) delete[] other_data_;
             return r;
         }
 
@@ -164,12 +166,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return !(*this == other);
         }
 
-        virtual const char * c_str() const = 0;
+        virtual const char* c_str() const = 0;
         virtual const bool c_str_is_allocated() const = 0;
         
         template <typename T2 = T, typename std::enable_if<std::is_trivially_copyable<T2>::value, size_t>::type = 0>
         const int mem_eq(const T2* s1, const T2* s2, const size_t len1, const size_t len2) const {
-            return len1 == len2 && std::memcmp(s1, s2, sizeof(T2)*len1);
+            if (len1 == len2) {
+                return std::memcmp(s1, s2, sizeof(T2)*len1);
+            }
+            return -1;
         }
         
         template <typename T2 = T, typename std::enable_if<!std::is_trivially_copyable<T2>::value, size_t>::type = 0>
@@ -178,7 +183,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 for(size_t s = 0; s < len1; s++) {
                     if (s1[s] != s2[s]) {
                         // we cannot use s1[s] - s2[s] since - operators might not be available nor sensible
-                        return 0;
+                        return -1;
                     }
                 }
                 return 0;
@@ -284,14 +289,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return lines().size();
         }
 
-        const bool operator == (const T * other) const {
-            auto * data_ = data();
+        virtual const bool operator == (const T* other) const {
+            auto* data_ = data();
             bool r = mem_eq(data_, other, length(), strlen(other)) == 0;
             if (data_is_allocated()) delete[] data_;
             return r;
         }
 
-        const bool operator != (const T * other) const {
+        const bool operator != (const T* other) const {
             return !(*this == other);
         }
     };
@@ -341,11 +346,11 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             init(nullptr, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
         } \
 \
-        NAME(const T * ptr, const T & new_line, const T & eof) { \
+        NAME(const T* ptr, const T & new_line, const T & eof) { \
             init(ptr, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
         } \
 \
-        NAME(const T * ptr, const size_t length, const T & new_line, const T & eof) { \
+        NAME(const T* ptr, const size_t length, const T & new_line, const T & eof) { \
             init(ptr, length, INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(new_line), INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(eof)); \
         } \
 \
@@ -353,15 +358,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             init(nullptr, new_line, eof); \
         } \
 \
-        NAME(const T * ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+        NAME(const T* ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
             init(ptr, new_line, eof); \
         } \
 \
-        NAME(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+        NAME(const T* ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
             init(ptr, length, new_line, eof); \
         } \
 \
-        void init(const T * ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
+        void init(const T* ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) { \
 \
             if (ptr == nullptr) { \
                 init(nullptr, 0, new_line, eof); \
@@ -445,7 +450,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *this;
         }
         
-        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+        void init(const T* ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
             this->new_line = new_line;
             this->eof = eof;
             
@@ -474,8 +479,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return len;
         }
 
-        const T * data() const override {
-            T * d = new T[len+1];
+        const T* data() const override {
+            T* d = new T[len+1];
             size_t i = 0;
             for (const T & copy : list) {
                 d[i] = copy;
@@ -504,13 +509,13 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
 
         void insert_(const BasicStringAdapter<T> & what, const size_t pos) override {
-            auto * vec = what.data_as_vector();
+            auto* vec = what.data_as_vector();
             if (vec != nullptr) {
                 // we can take advantage of vector
                 list.insert(std::next(list.begin(), clamp_pos(pos)), vec->begin(), vec->end()-1);
                 len += what.length();
             } else {
-                const T * p = what.data();
+                const T* p = what.data();
                 const size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
@@ -592,6 +597,13 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ForwardListAdapter, T)
 
+        const bool operator == (const T* other) const override {
+            auto* data_ = data();
+            bool r = mem_eq(data_+1, other, length(), strlen(other)) == 0;
+            if (data_is_allocated()) delete[] data_;
+            return r;
+        }
+
         ForwardListAdapter(const ForwardListAdapter & other) {
             forward_list = other.forward_list;
             len = other.len;
@@ -622,7 +634,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *this;
         }
 
-        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+        void init(const T* ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
             this->new_line = new_line;
             this->eof = eof;
             
@@ -651,8 +663,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return len;
         }
 
-        const T * data() const override {
-            T * d = new T[len+1];
+        const T* data() const override {
+            T* d = new T[len+1];
             size_t i = 0;
             for (const T & copy : forward_list) {
                 d[i] = copy;
@@ -681,13 +693,13 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
 
         void insert_(const BasicStringAdapter<T> & what, const size_t pos) override {
-            auto * vec = what.data_as_vector();
+            auto* vec = what.data_as_vector();
             if (vec != nullptr) {
                 // we can take advantage of vector
                 forward_list.insert_after(std::next(forward_list.begin(), clamp_pos(pos)), vec->begin(), vec->end()-1);
                 len += what.length();
             } else {
-                const T * p = what.data();
+                const T* p = what.data();
                 const size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
@@ -795,7 +807,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *this;
         }
 
-        void init(const T * ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
+        void init(const T* ptr, const size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof) {
             this->new_line = new_line;
             this->eof = eof;
 
@@ -818,7 +830,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return vector[index];
         }
         
-        const T * data() const override {
+        const T* data() const override {
             return vector.data();
         }
         
@@ -846,12 +858,12 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
         
         void insert_(const BasicStringAdapter<T> & what, const size_t pos) override {
-            auto * vec = what.data_as_vector();
+            auto* vec = what.data_as_vector();
             if (vec != nullptr) {
                 // we can take advantage of vector
                 vector.insert(vector.begin() + clamp_pos(pos), vec->begin(), vec->end()-1);
             } else {
-                const T * p = what.data();
+                const T* p = what.data();
                 const size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
@@ -911,7 +923,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         ~ResizingVectorAdapter() override {
         }
     };
-    
+
 #define CHAR_ADAPTER_IMPL(ADAPTER) \
 template <typename T, typename UNUSED = void> \
 struct ADAPTER##_impl : ADAPTER<T> { \
@@ -921,17 +933,16 @@ struct ADAPTER##_impl : ADAPTER<T> { \
 \
     ADAPTER##_impl() : BASE('\n', '\0') {} \
 \
-    ADAPTER##_impl(const T * ptr) : BASE(ptr, '\n', '\0') {} \
+    ADAPTER##_impl(const T* ptr) : BASE(ptr, '\n', '\0') {} \
 \
-    ADAPTER##_impl(const T * ptr, const size_t length) : BASE(ptr, length, '\n', '\0') {} \
+    ADAPTER##_impl(const T* ptr, const size_t length) : BASE(ptr, length, '\n', '\0') {} \
 \
     ADAPTER##_impl(const std::string & str) : ADAPTER##_impl(str.data(), str.size()) {} \
 \
-    void print(const char * str) \
-    { \
+    void print(const char* str) { \
         const size_t len = size(); \
         std::cout << str << ". (size (excluding null): " << len << ") "; \
-        const T * data_ = data(); \
+        const T* data_ = data(); \
         for (size_t i = 0; i <= len; i++) { \
             if (data_[i] == get_end_of_file()) { \
                 std::cout << "\\0" << ' '; \
@@ -947,7 +958,7 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         append(s.data(), s.length()); \
     } \
 \
-    void append(const T * s) { \
+    void append(const T* s) { \
         append_(ADAPTER##_impl<T, UNUSED>(s, strlen(s))); \
     } \
 \
@@ -955,7 +966,7 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         insert_(ADAPTER##_impl<T, UNUSED>(s.data(), s.length()), pos, len); \
     } \
 \
-    void insert(const size_t pos, const size_t len, const char * s) { \
+    void insert(const size_t pos, const size_t len, const char* s) { \
         insert_(ADAPTER##_impl<T, UNUSED>(s, strlen(s)), pos, len); \
     } \
 \
@@ -963,7 +974,7 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         replace_(ADAPTER##_impl<T, UNUSED>(s.data(), s.length()), pos, len); \
     } \
 \
-    void replace(const size_t pos, const size_t len, const char * s) { \
+    void replace(const size_t pos, const size_t len, const char* s) { \
         replace_(ADAPTER##_impl<T, UNUSED>(s, strlen(s)), pos, len); \
     } \
 \
@@ -971,7 +982,7 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         erase_(pos, len); \
     } \
 \
-    const T * c_str() const override { \
+    const T* c_str() const override { \
         return data(); \
     } \
 \
