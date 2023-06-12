@@ -1,3 +1,17 @@
+# cloning
+
+```sh
+# as a non-submodule
+git clone --recursive https://github.com/mgood7123/StringAdapter
+
+## as a submodule
+git submodule add https://github.com/mgood7123/StringAdapter path/to/StringAdapter
+git submodule update --init --recursive
+
+# building and testing
+make test_debug
+```
+
 # StringAdapter
 
 StringAdapter is a C++11 compatible library, exposing string manipulation capabilities for any given type
@@ -309,24 +323,3 @@ void erase(const std::size_t pos, const std::size_t len)
 ```
 calls `erase_`
 
-
-# cloning
-
-## as a non-submodule
-
-```shell script
-git clone --recursive https://github.com/mgood7123/StringAdapter
-```
-
-## as a submodule
-
-```shell script
-git submodule add https://github.com/mgood7123/StringAdapter path/to/StringAdapter
-git submodule update --init --recursive
-```
-
-# building and testing
-
-```shell script
-make test_debug
-```
