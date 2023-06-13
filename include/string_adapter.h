@@ -218,7 +218,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             virtual const BasicStringAdapter<T>* get_origin() = 0;
 
             protected:
-            BasicStringAdapter<T>* get_origin_() {
+            const BasicStringAdapter<T>* get_origin_() {
                 return origin;
             };
         };
