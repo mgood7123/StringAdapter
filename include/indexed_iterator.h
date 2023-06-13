@@ -12,16 +12,28 @@ namespace IndexedIterator {
         iterator(T* origin, std::size_t index) : origin(origin), index(index) {}
         iterator(const iterator<T, reference> & o) : origin(o.origin), index(o.index) {}
 
-        iterator& operator ++(int) {
+        iterator operator ++(int) {
+            iterator old(origin, index);
             index++;
-            return *this;
+            return old;
         }
 
-        iterator& operator --(int) {
+        iterator operator --(int) {
+            iterator old(origin, index);
             index--;
-            return *this;
+            return old;
         }
         
+        iterator operator ++() {
+            index++;
+            return iterator(origin, index);
+        }
+
+        iterator operator --() {
+            index--;
+            return iterator(origin, index);
+        }
+
         iterator operator +(std::size_t i) {
             return iterator <T, reference>(origin, index+i);
         }
