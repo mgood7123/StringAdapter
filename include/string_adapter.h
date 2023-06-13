@@ -563,17 +563,17 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
         
         ListAdapter(ListAdapter && other) {
-            list = other.list;
-            len = other.len;
-            new_line = other.new_line;
-            eof = other.eof;
+            list = std::move(other.list);
+            len = std::move(other.len);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
         }
         
         const ListAdapter & operator=(ListAdapter && other) const {
-            list = other.list;
-            len = other.len;
-            new_line = other.new_line;
-            eof = other.eof;
+            list = std::move(other.list);
+            len = std::move(other.len);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
             return *this;
         }
         
@@ -741,17 +741,17 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
         
         ForwardListAdapter(ForwardListAdapter && other) {
-            forward_list = other.forward_list;
-            len = other.len;
-            new_line = other.new_line;
-            eof = other.eof;
+            forward_list = std::move(other.forward_list);
+            len = std::move(other.len);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
         }
         
         const ForwardListAdapter & operator=(ForwardListAdapter && other) const {
-            forward_list = other.forward_list;
-            len = other.len;
-            new_line = other.new_line;
-            eof = other.eof;
+            forward_list = std::move(other.forward_list);
+            len = std::move(other.len);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
             return *this;
         }
 
@@ -910,15 +910,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
         
         VectorAdapter(VectorAdapter && other) {
-            vector = other.vector;
-            new_line = other.new_line;
-            eof = other.eof;
+            vector = std::move(other.vector);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
         }
         
         const VectorAdapter & operator=(VectorAdapter && other) const {
-            vector = other.vector;
-            new_line = other.new_line;
-            eof = other.eof;
+            vector = std::move(other.vector);
+            new_line = std::move(other.new_line);
+            eof = std::move(other.eof);
             return *this;
         }
 
