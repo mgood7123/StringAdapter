@@ -711,7 +711,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
     struct ForwardListAdapter : public BasicStringAdapter<T> {
         mutable std::forward_list<T> forward_list;
         mutable std::size_t len;
-        mutable std::function<const std::pair<T, T>()> new_line__eof__func;
 
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
@@ -889,7 +888,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
     template<typename T>
     struct VectorAdapter : public BasicStringAdapter<T> {
         mutable std::vector<T> vector;
-        mutable std::function<const std::pair<T, T>()> new_line__eof__func;
         
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
@@ -1035,7 +1033,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE = VectorAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
         using BASE::vector;
-        using BASE::new_line__eof__func;
         
         void insert_(const BasicStringAdapter<T> & what, const std::size_t pos) override {
             vector.reserve(length() + what.length() + 1);
