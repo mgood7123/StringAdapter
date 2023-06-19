@@ -76,6 +76,8 @@ a `Slice` represents a region of an `adapter`
 ```c
 iterator begin()
 iterator end()
+reverse_iterator rbegin()
+reverse_iterator rend()
 T & operator[] (const std::size_t index)
 const std::size_t get_start()
 const std::size_t get_end()
@@ -91,6 +93,10 @@ const const_iterator begin()
 const const_iterator end()
 const const_iterator cbegin()
 const const_iterator cend()
+const const_reverse_iterator rbegin()
+const const_reverse_iterator rend()
+const const_reverse_iterator crbegin()
+const const_reverse_iterator crend()
 const T & operator[] (const std::size_t index)
 const std::size_t get_start()
 const std::size_t get_end()
@@ -107,8 +113,16 @@ const const_iterator cbegin() const
 iterator end()
 const const_iterator end() const
 const const_iterator cend() const
+
+reverse_iterator rbegin()
+const const_reverse_iterator rbegin() const
+const const_reverse_iterator crbegin() const
+
+reverse_iterator rend()
+const const_reverse_iterator rend() const
+const const_reverse_iterator crend() const
 ```
-`adapter specific` `indexed-iterators` for `begin` and `end`
+`adapter specific` `indexed-iterators` for `begin`, `end` and their reverse counterparts `rbegin` and `rend`
 
 required for `for loop` (specifically `for( VALUE_HERE : ADAPTER_HERE )`) capabilities
 
@@ -176,6 +190,10 @@ const bool operator != (const BasicStringAdapter<T> & other) const
 compares the contents of one `adapter` with the contents of another `adapter`
 
 ```c
+virtual T* c_str_()
+virtual const T* c_str_() const
+virtual const bool c_str__is_allocated() const
+
 virtual char * c_str()
 virtual const char * c_str() const
 virtual const bool c_str_is_allocated() const
@@ -187,6 +205,10 @@ returns the contents as a `char *` string
 this should be a one way `T -> char*` conversion for each element `T`
 
 `IMPORTANT:` there is no `char* -> T` conversion as `std::string` requires since `reversing a conversion may be impossible`
+
+`IMPLEMENTATION:` it is recommended to implement `c_str_()` and friends, and return a suitible `T*`, subclasses should implement `c_str()` calling `c_str_()` and if needed, converting the result to `char*`
+
+this allows intermediate conversion of the returned `T*` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0hi` -> `hi\0`
 
 ```c
 const int mem_eq(const T2* s1, const T2* s2, const std::size_t len1, const std::size_t len2) const

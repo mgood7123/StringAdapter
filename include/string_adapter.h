@@ -344,6 +344,10 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         virtual T* data() = 0;
         virtual const T* data() const = 0;
         virtual const bool data_is_allocated() const = 0;
+
+        virtual T* c_str_() = 0;
+        virtual const T* c_str_() const = 0;
+        virtual const bool c_str__is_allocated() const = 0;
         
         virtual std::vector<T>* data_as_vector() = 0;
         virtual const std::vector<T>* data_as_vector() const = 0;
@@ -514,6 +518,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::operator[]; \
         using BASE::data; \
         using BASE::data_is_allocated; \
+        using BASE::c_str_; \
+        using BASE::c_str__is_allocated; \
         using BASE::data_as_vector; \
         using BASE::length; \
         using BASE::resize; \
@@ -698,6 +704,18 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         const bool data_is_allocated() const override {
             return true;
+        }
+
+        T* c_str_() override {
+            return data();
+        }
+
+        const T* c_str_() const override {
+            return data();
+        }
+
+        const bool c_str__is_allocated() const override {
+            return data_is_allocated();
         }
 
         std::vector<T>* data_as_vector() override {
@@ -917,6 +935,30 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return true;
         }
 
+        T* c_str_() override {
+            T* d = new T[len+1];
+            std::size_t i = len;
+            for (const T & copy : forward_list) {
+                d[i] = copy;
+                i--;
+            }
+            return d;
+        }
+
+        const T* c_str_() const override {
+            T* d = new T[len+1];
+            std::size_t i = len;
+            for (const T & copy : forward_list) {
+                d[i] = copy;
+                i--;
+            }
+            return d;
+        }
+
+        const bool c_str__is_allocated() const override {
+            return true;
+        }
+
         std::vector<T>* data_as_vector() override {
             return nullptr;
         }
@@ -1063,6 +1105,18 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         
         const bool data_is_allocated() const override {
             return false;
+        }
+
+        T* c_str_() override {
+            return data();
+        }
+
+        const T* c_str_() const override {
+            return data();
+        }
+
+        const bool c_str__is_allocated() const override {
+            return data_is_allocated();
         }
 
         std::vector<T>* data_as_vector() override {
@@ -1213,15 +1267,15 @@ struct ADAPTER##_impl : ADAPTER<T> { \
     } \
 \
     char * c_str() override { \
-        return data(); \
+        return c_str_(); \
     } \
 \
     const char * c_str() const override { \
-        return data(); \
+        return c_str_(); \
     } \
 \
     const bool c_str_is_allocated() const override { \
-        return data_is_allocated(); \
+        return c_str__is_allocated(); \
     } \
 \
     const void deleteSelf() const override { \
