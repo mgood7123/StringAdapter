@@ -68,6 +68,70 @@ namespace IndexedIterator {
             return !(*this == other);
         }
     };
+
+    template <typename T, typename reference>
+    struct reverse_iterator {
+        
+        T* origin = nullptr;
+        mutable std::size_t index = 0;
+
+        reverse_iterator(T* origin, std::size_t index) : origin(origin), index(index) {}
+        reverse_iterator(const reverse_iterator<T, reference> & o) : origin(o.origin), index(o.index) {}
+
+        reverse_iterator operator ++(int) {
+            reverse_iterator old(origin, index);
+            index--;
+            return old;
+        }
+
+        reverse_iterator operator --(int) {
+            reverse_iterator old(origin, index);
+            index++;
+            return old;
+        }
+        
+        reverse_iterator operator ++() {
+            index--;
+            return reverse_iterator(origin, index);
+        }
+
+        reverse_iterator operator --() {
+            index++;
+            return reverse_iterator(origin, index);
+        }
+
+        reverse_iterator operator +(std::size_t i) {
+            return reverse_iterator <T, reference>(origin, index-i);
+        }
+
+        const reverse_iterator operator +(std::size_t i) const {
+            return reverse_iterator <T, reference>(origin, index-i);
+        }
+
+        reverse_iterator operator -(std::size_t i) {
+            return reverse_iterator <T, reference>(origin, index+i);
+        }
+
+        const reverse_iterator operator -(std::size_t i) const {
+            return reverse_iterator <T, reference>(origin, index+i);
+        }
+
+        reference operator *() {
+            return origin->operator[](index);
+        }
+
+        reference operator *() const {
+            return origin->operator[](index);
+        }
+
+        const bool operator == (const reverse_iterator<T, reference> & other) const {
+            return origin == other.origin && index == other.index;
+        }
+
+        const bool operator != (const reverse_iterator<T, reference> & other) const {
+            return !(*this == other);
+        }
+    };
 }
 
 #endif

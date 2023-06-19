@@ -123,6 +123,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::BASE; \
         using BASE::begin; \
         using BASE::end; \
+        using BASE::rbegin; \
+        using BASE::rend; \
         using BASE::operator[]; \
         using BASE::get_origin; \
         using BASE::get_origin_; \
@@ -133,6 +135,10 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::end; \
         using BASE::cbegin; \
         using BASE::cend; \
+        using BASE::rbegin; \
+        using BASE::rend; \
+        using BASE::crbegin; \
+        using BASE::crend; \
         using BASE::operator[]; \
         using BASE::get_origin; \
         using BASE::get_origin_; \
@@ -147,6 +153,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             Slice(BasicStringAdapter<T>* origin, std::size_t start, std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start) {}
 
             using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T&>;
+            using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T&>;
 
             iterator begin() {
                 return iterator(origin, start_);
@@ -154,6 +161,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
             iterator end() {
                 return iterator(origin, end_+1);
+            }
+
+            reverse_iterator rbegin() {
+                return reverse_iterator(origin, end_);
+            }
+
+            reverse_iterator rend() {
+                return reverse_iterator(origin, start_-1);
             }
 
             T & operator[] (const std::size_t index) {
@@ -186,6 +201,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             CSlice(const BasicStringAdapter<T>* origin, const std::size_t start, const std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start) {}
 
             using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T&>;
+            using const_reverse_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T&>;
 
             const const_iterator cbegin() const {
                 return const_iterator(origin, start_);
@@ -201,6 +217,22 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
             const const_iterator end() const {
                 return cend();
+            }
+
+            const const_reverse_iterator crbegin() const {
+                return const_reverse_iterator(origin, end_);
+            }
+
+            const const_reverse_iterator crend() const {
+                return const_reverse_iterator(origin, start_-1);
+            }
+
+            const const_reverse_iterator rbegin() const {
+                return crbegin();
+            }
+
+            const const_reverse_iterator rend() const {
+                return crend();
             }
 
             const std::size_t get_start() {
@@ -263,28 +295,31 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return cend();
         }
 
-        virtual iterator rbegin() {
-            return iterator(this, 0);
+        using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T&>;
+        using const_reverse_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T&>;
+
+        virtual reverse_iterator rbegin() {
+            return reverse_iterator(this, length()-1);
         }
 
-        virtual iterator rend() {
-            return iterator(this, length());
+        virtual reverse_iterator rend() {
+            return reverse_iterator(this, -1);
         }
 
-        virtual const const_iterator rcbegin() const {
-            return const_iterator(this, 0);
+        virtual const const_reverse_iterator crbegin() const {
+            return const_reverse_iterator(this, length()-1);
         }
 
-        virtual const const_iterator rcend() const {
-            return const_iterator(this, length());
+        virtual const const_reverse_iterator crend() const {
+            return const_reverse_iterator(this, -1);
         }
 
-        virtual const const_iterator rbegin() const {
-            return cbegin();
+        virtual const const_reverse_iterator rbegin() const {
+            return crbegin();
         }
 
-        virtual const const_iterator rend() const {
-            return cend();
+        virtual const const_reverse_iterator rend() const {
+            return crend();
         }
 
         virtual Slice* slice(std::size_t start, std::size_t end) = 0;
@@ -507,9 +542,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::end; \
         using BASE::cbegin; \
         using BASE::cend; \
+        using BASE::rbegin; \
+        using BASE::rend; \
+        using BASE::crbegin; \
+        using BASE::crend; \
         using BASE::slice; \
         using typename BASE::iterator; \
         using typename BASE::const_iterator; \
+        using typename BASE::reverse_iterator; \
+        using typename BASE::const_reverse_iterator; \
 
 #define BASIC_STRING_ADAPTER_USING(BASE) \
         BASIC_STRING_ADAPTER_USING_BASE(BASE) \
@@ -766,6 +807,22 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return const_iterator(this, l);
         }
 
+        virtual reverse_iterator rbegin() override {
+            return reverse_iterator(this, length());
+        }
+
+        virtual const const_reverse_iterator crbegin() const override {
+            return const_reverse_iterator(this, length());
+        }
+
+        virtual reverse_iterator rend() override {
+            return reverse_iterator(this, 0);
+        }
+
+        virtual const const_reverse_iterator crend() const override {
+            return const_reverse_iterator(this, 0);
+        }
+        
         const bool operator == (const T* other) const override {
             auto* data_ = data();
             bool r = mem_eq(data_+1, other, length(), strlen(other)) == 0;
