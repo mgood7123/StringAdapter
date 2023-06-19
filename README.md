@@ -325,18 +325,21 @@ returns the `EOF` marker, for `char` this is the `null terminator` which is `\0`
 ```c
 void append(const std::string & s)
 void append(const char_t * s)
+void append(const char_t & c)
 ```
 calls `append_`
 
 ```c
 void insert(const std::size_t pos, const std::size_t len, const std::string & s)
 void insert(const std::size_t pos, const std::size_t len, const char * s)
+void insert(const std::size_t pos, const std::size_t len, const char & s)
 ```
 calls `insert_`
 
 ```c
 void replace(const std::size_t pos, const std::size_t len, const std::string & s)
 void replace(const std::size_t pos, const std::size_t len, const char * s)
+void replace(const std::size_t pos, const std::size_t len, const char & s)
 ```
 calls `replace_`
 

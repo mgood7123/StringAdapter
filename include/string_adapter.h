@@ -175,6 +175,10 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 return origin->operator[](start_ + index);
             }
 
+            const T & operator[] (const std::size_t index) const {
+                return origin->operator[](start_ + index);
+            }
+
             const std::size_t get_start() {
                 return start_;
             };
@@ -1246,6 +1250,11 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         append_(ADAPTER##_impl<T>(s, strlen(s))); \
     } \
 \
+    void append(const T & c) { \
+        T s[2] = { c, get_end_of_file() }; \
+        append_(ADAPTER##_impl<T>(s, 1)); \
+    } \
+\
     void insert(const std::size_t pos, const std::size_t len, const std::string & s) { \
         insert_(ADAPTER##_impl<T>(s.data(), s.length()), pos, len); \
     } \
@@ -1254,12 +1263,22 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         insert_(ADAPTER##_impl<T>(s, strlen(s)), pos, len); \
     } \
 \
+    void insert(const std::size_t pos, const std::size_t len, const T & c) { \
+        T s[2] = { c, get_end_of_file() }; \
+        insert_(ADAPTER##_impl<T>(s, 1), pos, len); \
+    } \
+\
     void replace(const std::size_t pos, const std::size_t len, const std::string & s) { \
         replace_(ADAPTER##_impl<T>(s.data(), s.length()), pos, len); \
     } \
 \
     void replace(const std::size_t pos, const std::size_t len, const char* s) { \
         replace_(ADAPTER##_impl<T>(s, strlen(s)), pos, len); \
+    } \
+\
+    void replace(const std::size_t pos, const std::size_t len, const char & c) { \
+        T s[2] = { c, get_end_of_file() }; \
+        replace_(ADAPTER##_impl<T>(s, 1), pos, len); \
     } \
 \
     void erase(const std::size_t pos, const std::size_t len) { \
