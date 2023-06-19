@@ -208,7 +208,7 @@ this should be a one way `T -> char*` conversion for each element `T`
 
 `IMPLEMENTATION:` it is recommended to implement `c_str_()` and friends, and return a suitible `T*`, subclasses should implement `c_str()` calling `c_str_()` and if needed, converting the result to `char*`
 
-this allows intermediate conversion of the returned `T*` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0hi` -> `hi\0`
+this allows intermediate conversion of the returned `T*` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0ih` -> `hi\0`
 
 ```c
 const int mem_eq(const T2* s1, const T2* s2, const std::size_t len1, const std::size_t len2) const
