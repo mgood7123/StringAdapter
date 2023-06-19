@@ -239,32 +239,56 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T&>;
         using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T&>;
 
-        iterator begin() {
+        virtual iterator begin() {
             return iterator(this, 0);
         }
 
-        iterator end() {
-            return iterator(this, length()+1);
+        virtual iterator end() {
+            return iterator(this, length());
         }
 
-        const const_iterator cbegin() const {
+        virtual const const_iterator cbegin() const {
             return const_iterator(this, 0);
         }
 
-        const const_iterator cend() const {
-            return const_iterator(this, length()+1);
+        virtual const const_iterator cend() const {
+            return const_iterator(this, length());
         }
 
-        const const_iterator begin() const {
+        virtual const const_iterator begin() const {
             return cbegin();
         }
 
-        const const_iterator end() const {
+        virtual const const_iterator end() const {
+            return cend();
+        }
+
+        virtual iterator rbegin() {
+            return iterator(this, 0);
+        }
+
+        virtual iterator rend() {
+            return iterator(this, length());
+        }
+
+        virtual const const_iterator rcbegin() const {
+            return const_iterator(this, 0);
+        }
+
+        virtual const const_iterator rcend() const {
+            return const_iterator(this, length());
+        }
+
+        virtual const const_iterator rbegin() const {
+            return cbegin();
+        }
+
+        virtual const const_iterator rend() const {
             return cend();
         }
 
         virtual Slice* slice(std::size_t start, std::size_t end) = 0;
-        virtual const CSlice* cslice(std::size_t start, std::size_t end) = 0;
+        virtual const CSlice* cslice(std::size_t start, std::size_t end) const = 0;
         virtual const CSlice* slice(std::size_t start, std::size_t end) const = 0;
 
         virtual BasicStringAdapter<T>* clone() = 0;
@@ -402,16 +426,16 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         virtual BasicStringAdapter<T>* newAdapter() = 0;
         virtual BasicStringAdapter<T>* newAdapter(const T* ptr) = 0;
         virtual BasicStringAdapter<T>* newAdapter(const T* ptr, const std::size_t length) = 0;
-        virtual const BasicStringAdapter<T>* newAdapter() const = 0;
-        virtual const BasicStringAdapter<T>* newAdapter(const T* ptr) const = 0;
-        virtual const BasicStringAdapter<T>* newAdapter(const T* ptr, const std::size_t length) const = 0;
+        virtual BasicStringAdapter<T>* newAdapter() const = 0;
+        virtual BasicStringAdapter<T>* newAdapter(const T* ptr) const = 0;
+        virtual BasicStringAdapter<T>* newAdapter(const T* ptr, const std::size_t length) const = 0;
 
-        const std::vector<std::unique_ptr<BasicStringAdapter<T>>> split(const T & splitter) const {
-            std::vector<BasicStringAdapter<T>*> vec;
+        std::vector<std::shared_ptr<BasicStringAdapter<T>>> split(const T & splitter) const {
+            std::vector<std::shared_ptr<BasicStringAdapter<T>>> vec;
             BasicStringAdapter<T>* c = newAdapter();
             for (const T & t : *this) {
                 if (t == splitter) {
-                    vec.push_back(make_unique(c));
+                    vec.push_back(std::shared_ptr<BasicStringAdapter<T>>(c));
                     c = newAdapter();
                 } else {
                     T s[2] = { t, get_end_of_file() };
@@ -420,11 +444,11 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                     tmp->deleteSelf();
                 }
             }
-            vec.push_back(c);
+            vec.push_back(std::shared_ptr<BasicStringAdapter<T>>(c));
             return vec;
         }
 
-        const std::vector<std::unique_ptr<BasicStringAdapter<T>>> lines() const {
+        std::vector<std::shared_ptr<BasicStringAdapter<T>>> lines() const {
             const std::size_t len = length();
             if (len == 0) {
                 return {};
@@ -484,6 +508,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::cbegin; \
         using BASE::cend; \
         using BASE::slice; \
+        using typename BASE::iterator; \
+        using typename BASE::const_iterator; \
 
 #define BASIC_STRING_ADAPTER_USING(BASE) \
         BASIC_STRING_ADAPTER_USING_BASE(BASE) \
@@ -536,7 +562,6 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             init(ptr, length, new_line, eof); \
         }
 
-    // a reverse string
     template<typename T>
     struct ListAdapter : public BasicStringAdapter<T> {
         mutable std::list<T> list;
@@ -716,6 +741,30 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
 
         BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ForwardListAdapter, T)
+
+        virtual iterator begin() override {
+            auto l = length();
+            l = l == 0 ? 0 : 1;
+            return iterator(this, l);
+        }
+
+        virtual const const_iterator cbegin() const override {
+            auto l = length();
+            l = l == 0 ? 0 : 1;
+            return const_iterator(this, l);
+        }
+
+        virtual iterator end() override {
+            auto l = length();
+            l = l == 0 ? 0 : l+1;
+            return iterator(this, l);
+        }
+
+        virtual const const_iterator cend() const override {
+            auto l = length();
+            l = l == 0 ? 0 : l+1;
+            return const_iterator(this, l);
+        }
 
         const bool operator == (const T* other) const override {
             auto* data_ = data();
@@ -1139,15 +1188,15 @@ struct ADAPTER##_impl : ADAPTER<T> { \
     }; \
 \
     Slice* slice(std::size_t start, std::size_t end) override { \
-        return new Slice(this, start, end); \
+        return new Slice(this, (begin()+start).index, (begin()+end).index); \
     }; \
 \
-    const CSlice* cslice(std::size_t start, std::size_t end) override { \
-        return new CSlice(this, start, end); \
+    const CSlice* cslice(std::size_t start, std::size_t end) const override { \
+        return new CSlice(this, (begin()+start).index, (begin()+end).index); \
     }; \
 \
     const CSlice* slice(std::size_t start, std::size_t end) const override { \
-        return new CSlice(this, start, end); \
+        return new CSlice(this, (begin()+start).index, (begin()+end).index); \
     }; \
 \
     ADAPTER##_impl<T>* clone() override { \
@@ -1170,15 +1219,15 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         return new ADAPTER##_impl<T>(ptr, length); \
     } \
 \
-    const ADAPTER##_impl<T>* newAdapter() const override { \
+    ADAPTER##_impl<T>* newAdapter() const override { \
         return new ADAPTER##_impl<T>(); \
     } \
 \
-    const ADAPTER##_impl<T>* newAdapter(const T* ptr) const override { \
+    ADAPTER##_impl<T>* newAdapter(const T* ptr) const override { \
         return new ADAPTER##_impl<T>(ptr); \
     } \
 \
-    const ADAPTER##_impl<T>* newAdapter(const T* ptr, const std::size_t length) const override { \
+    ADAPTER##_impl<T>* newAdapter(const T* ptr, const std::size_t length) const override { \
         return new ADAPTER##_impl<T>(ptr, length); \
     } \
 }

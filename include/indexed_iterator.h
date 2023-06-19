@@ -1,6 +1,8 @@
 #ifndef INDEXED_ITERATOR_H
 #define INDEXED_ITERATOR_H
 
+#include <cstddef>
+
 // allows begin/end sementics for [] operator
 namespace IndexedIterator {
     template <typename T, typename reference>

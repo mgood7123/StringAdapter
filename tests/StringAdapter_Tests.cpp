@@ -31,7 +31,7 @@ TEST(VectorAdapter_Core, initialization_data_checking) {
 }
 
 TEST(ListAdapter_Core, initialization_data_checking) {
-    CharForwardListAdapter a;
+    CharListAdapter a;
     ASSERT_EQ(a.len, 0);
     ASSERT_EQ(a.length(), 0);
     ASSERT_EQ(a[0], '\0');
@@ -40,7 +40,7 @@ TEST(ListAdapter_Core, initialization_data_checking) {
 }
 
 TEST(ForwardListAdapter_Core, initialization_data_checking) {
-    CharListAdapter a;
+    CharForwardListAdapter a;
     ASSERT_EQ(a.len, 0);
     ASSERT_EQ(a.length(), 0);
     ASSERT_EQ(a[0], '\0');
@@ -97,397 +97,211 @@ TEST(ForwardListAdapter_Core, initialization2_data_checking) {
     data_is_val(a, 5, 'h');
 }
 
-TEST(ResizingVectorAdapter_Core, iterator_begin) {
-    CharResizingVectorAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
+#define TEST_ITERATOR(A, B, C, D, IT_NAME, IT_BEGIN, IT_END, SLICE_NAME, SLICE_FUNC) \
+TEST(ResizingVectorAdapter_Core, IT_NAME##_empty##IT_BEGIN##_##IT_END) { \
+    A a; \
+    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
+} \
+\
+TEST(VectorAdapter_Core, IT_NAME##_empty##IT_BEGIN##_##IT_END) { \
+    B a; \
+    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
+} \
+\
+TEST(ListAdapter_Core, IT_NAME##_empty##IT_BEGIN##_##IT_END) { \
+    C a; \
+    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
+} \
+\
+TEST(ForwardListAdapter_Core, IT_NAME##_empty##IT_BEGIN##_##IT_END) { \
+    D a; \
+    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
+} \
+\
+TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
+    A a = "12345"; \
+    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
+} \
+\
+TEST(VectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
+    B a = "12345"; \
+    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
+} \
+\
+TEST(ListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
+    C a = "12345"; \
+    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
+} \
+\
+TEST(ForwardListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
+    D a = "12345"; \
+    ASSERT_EQ(*a.IT_BEGIN(), '5'); \
+} \
+\
+TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END) { \
+    A a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1), '5'); \
+} \
+\
+TEST(VectorAdapter_Core, IT_NAME##_##IT_END) { \
+    B a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1), '5'); \
+} \
+\
+TEST(ListAdapter_Core, IT_NAME##_##IT_END) { \
+    C a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1), '5'); \
+} \
+\
+TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END) { \
+    D a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1), '1'); \
+} \
+\
+TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
+    A a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
+} \
+\
+TEST(VectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
+    B a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
+} \
+\
+TEST(ListAdapter_Core, IT_NAME##_##IT_END##_2) { \
+    C a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
+} \
+\
+TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END##_2) { \
+    D a = "12345"; \
+    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
+} \
+\
+TEST(ResizingVectorAdapter_Core, SLICE_NAME) { \
+    A a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(s[0], '2'); \
+    ASSERT_EQ(s[1], '3'); \
+    ASSERT_EQ(s[2], '4'); \
+    delete sp; \
+} \
+\
+TEST(VectorAdapter_Core, SLICE_NAME) { \
+    B a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(s[0], '2'); \
+    ASSERT_EQ(s[1], '3'); \
+    ASSERT_EQ(s[2], '4'); \
+    delete sp; \
+} \
+\
+TEST(ListAdapter_Core, SLICE_NAME) { \
+    C a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(s[0], '2'); \
+    ASSERT_EQ(s[1], '3'); \
+    ASSERT_EQ(s[2], '4'); \
+    delete sp; \
+} \
+\
+TEST(ForwardListAdapter_Core, SLICE_NAME) { \
+    D a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(s[0], '4'); \
+    ASSERT_EQ(s[1], '3'); \
+    ASSERT_EQ(s[2], '2'); \
+    delete sp; \
+} \
+\
+TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_BEGIN) { \
+    CharResizingVectorAdapter a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
+    delete sp; \
+} \
+\
+TEST(VectorAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_BEGIN) { \
+    CharVectorAdapter a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
+    delete sp; \
+} \
+\
+TEST(ListAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_BEGIN) { \
+    CharListAdapter a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
+    delete sp; \
+} \
+\
+TEST(ForwardListAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_BEGIN) { \
+    CharForwardListAdapter a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 3); \
+    auto & s = *sp; \
+    ASSERT_EQ(*s.IT_BEGIN(), '4'); \
+    delete sp; \
+} \
+\
+TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_END) { \
+    A a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 2); \
+    auto & s = *sp; \
+    ASSERT_EQ(*(s.IT_END()-1), '3'); \
+    delete sp; \
+    auto sp2 = a.SLICE_FUNC(1, 3); \
+    auto & s2 = *sp2; \
+    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
+    delete sp2; \
+} \
+\
+TEST(VectorAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_END) { \
+    B a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 2); \
+    auto & s = *sp; \
+    ASSERT_EQ(*(s.IT_END()-1), '3'); \
+    delete sp; \
+    auto sp2 = a.SLICE_FUNC(1, 3); \
+    auto & s2 = *sp2; \
+    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
+    delete sp2; \
+} \
+\
+TEST(ListAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_END) { \
+    C a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 2); \
+    auto & s = *sp; \
+    ASSERT_EQ(*(s.IT_END()-1), '3'); \
+    delete sp; \
+    auto sp2 = a.SLICE_FUNC(1, 3); \
+    auto & s2 = *sp2; \
+    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
+    delete sp2; \
+} \
+\
+TEST(ForwardListAdapter_Core, SLICE_NAME##_##IT_NAME##_##IT_END) { \
+    D a = "12345"; \
+    auto sp = a.SLICE_FUNC(1, 2); \
+    auto & s = *sp; \
+    ASSERT_EQ(*(s.IT_END()-1), '3'); \
+    delete sp; \
+    auto sp2 = a.SLICE_FUNC(1, 3); \
+    auto & s2 = *sp2; \
+    ASSERT_EQ(*(s2.IT_END()-1), '2'); \
+    delete sp2; \
+} \
 
-TEST(VectorAdapter_Core, iterator_begin) {
-    CharVectorAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ListAdapter_Core, iterator_begin) {
-    CharForwardListAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ForwardListAdapter_Core, iterator_begin) {
-    CharListAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ResizingVectorAdapter_Core, iterator_end) {
-    CharResizingVectorAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(VectorAdapter_Core, iterator_end) {
-    CharVectorAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(ListAdapter_Core, iterator_end) {
-    CharListAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(ForwardListAdapter_Core, iterator_end) {
-    CharForwardListAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), 'h');
-}
-
-TEST(ResizingVectorAdapter_Core, slice) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, slice) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, slice) {
-    CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, slice) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'o');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, slice_iterator_begin) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, slice_iterator_begin) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, slice_iterator_begin) {
-    CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, slice_iterator_begin) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'o');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, slice_iterator_end) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, slice_iterator_end) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, slice_iterator_end) {
-    CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, slice_iterator_end) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, cslice) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, cslice) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, cslice) {
-    CharListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, cslice) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'o');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, cslice_iterator_begin) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, cslice_iterator_begin) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, cslice_iterator_begin) {
-    CharListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, cslice_iterator_begin) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'o');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, cslice_iterator_end) {
-    CharResizingVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, cslice_iterator_end) {
-    CharVectorAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, cslice_iterator_end) {
-    CharListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, cslice_iterator_end) {
-    CharForwardListAdapter a = "hello";
-    auto sp = a.cslice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, const_iterator_begin) {
-    const CharResizingVectorAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(VectorAdapter_Core, const_iterator_begin) {
-    const CharVectorAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ListAdapter_Core, const_iterator_begin) {
-    const CharForwardListAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ForwardListAdapter_Core, const_iterator_begin) {
-    const CharListAdapter a;
-    ASSERT_EQ(*a.begin(), '\0');
-}
-
-TEST(ResizingVectorAdapter_Core, const_iterator_end) {
-    const CharResizingVectorAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(VectorAdapter_Core, const_iterator_end) {
-    const CharVectorAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(ListAdapter_Core, const_iterator_end) {
-    const CharListAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), '\0');
-}
-
-TEST(ForwardListAdapter_Core, const_iterator_end) {
-    const CharForwardListAdapter a = "hello";
-    ASSERT_EQ(*(a.end()-1), 'h');
-}
-
-TEST(ResizingVectorAdapter_Core, const_slice) {
-    const CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, const_slice) {
-    const CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, const_slice) {
-    const CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'e');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, const_slice) {
-    const CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(s[0], 'o');
-    ASSERT_EQ(s[1], 'l');
-    ASSERT_EQ(s[2], 'l');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, const_slice_iterator_begin) {
-    const CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, const_slice_iterator_begin) {
-    const CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, const_slice_iterator_begin) {
-    const CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'e');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, const_slice_iterator_begin) {
-    const CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*s.begin(), 'o');
-    delete sp;
-}
-
-TEST(ResizingVectorAdapter_Core, const_slice_iterator_end) {
-    const CharResizingVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(VectorAdapter_Core, const_slice_iterator_end) {
-    const CharVectorAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ListAdapter_Core, const_slice_iterator_end) {
-    const CharListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
-
-TEST(ForwardListAdapter_Core, const_slice_iterator_end) {
-    const CharForwardListAdapter a = "hello";
-    auto sp = a.slice(1, 3);
-    auto & s = *sp;
-    ASSERT_EQ(*(s.end()-1), 'l');
-    delete sp;
-}
+TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, iterator, begin, end, slice, slice)
+TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, citerator, cbegin, cend, cslice, cslice)
+TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_iterator, begin, end, const_slice, slice)
+TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_citerator, cbegin, cend, const_cslice, cslice)
 
 TEST(ResizingVectorAdapter_Core, append1) {
     CharResizingVectorAdapter a;
