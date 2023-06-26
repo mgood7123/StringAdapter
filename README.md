@@ -16,6 +16,8 @@ make test_debug
 
 StringAdapter is a C++11 compatible library, exposing string manipulation capabilities for any given type
 
+ALL PROVIDED DATA STRUCTURES ARE `HASHABLE` AND `COMPARABLE`
+
 we provide 4 types of adapters: `ListAdapter`, `ForwardListAdapter`, `VectorAdapter`, and `ResizingListAdapter`
 
 for demonstration we provide a `char` implementation of each adapter
@@ -139,30 +141,24 @@ const T & operator[] (const std::size_t index) const
 your basic array index operator, `arr[5] = value`
 
 ```c
-virtual T* data()
-virtual const T* data() const
+virtual Shared<T> data()
+virtual const CShared<T> data() const
 ```
 returns a `contigous array` of data
 
 this must never return `nullptr`, `NULL`, an `address of 0x0`, or an `integer zero ( return 0; )`
 
-```c
-virtual const bool data_is_allocated() const
-```
-this must always be checked when using `data()`
+this returns a managed `Shared` object, functions include `T * ptr()`, `std::size_t length()`, and `std::size_t lengthInBytes()`
 
-the returned pointer must be `freed` via the `delete[]` operator
+`Shared` is a wrapper for `std::shared_ptr` and contains additional information such as the length of the pointer array
+
+`CShared` is a `const` version of `Shared`
 
 ```c
 virtual std::vector<T>* data_as_vector()
 virtual const std::vector<T>* data_as_vector() const
 ```
 returns the data as a `std::vector`
-
-it `may return nullptr`
-
-the returned pointer must be `freed` via the `delete` operator
-
 ```c
 virtual const std::size_t length() const
 ```
@@ -190,35 +186,41 @@ const bool operator != (const BasicStringAdapter<T> & other) const
 compares the contents of one `adapter` with the contents of another `adapter`
 
 ```c
-virtual T* c_str_()
-virtual const T* c_str_() const
-virtual const bool c_str__is_allocated() const
+virtual Shared<T> c_str_()
+virtual const CShared<T> c_str_() const
 
-virtual char * c_str()
-virtual const char * c_str() const
-virtual const bool c_str_is_allocated() const
+virtual Shared<char> c_str()
+virtual const Shared<char> c_str() const
 ```
 same usage as `data()` and `data_is_allocated()`
 
-returns the contents as a `char *` string
+returns the contents as a `Shared<char>` which can be accessed as a `char *` string via `ptr()`
 
 this should be a one way `T -> char*` conversion for each element `T`
 
+thus should be a one way `Shared<T> -> Shared<char>` conversion for each element `Shared<T>`
+
 `IMPORTANT:` there is no `char* -> T` conversion as `std::string` requires since `reversing a conversion may be impossible`
 
-`IMPLEMENTATION:` it is recommended to implement `c_str_()` and friends, and return a suitible `T*`, subclasses should implement `c_str()` calling `c_str_()` and if needed, converting the result to `char*`
+`IMPLEMENTATION:` it is recommended to implement `c_str_()` and friends, and return a suitible `Shared<T>`, subclasses should implement `c_str()` calling `c_str_()` and if needed, converting the result to `Shared<char>`
 
-this allows intermediate conversion of the returned `T*` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0ih` -> `hi\0`
+this allows intermediate conversion of the returned `Shared<T>` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0ih` -> `hi\0`
 
 ```c
-const int mem_eq(const T2* s1, const T2* s2, const std::size_t len1, const std::size_t len2) const
-void mem_cpy(T2* dest, const T2* src, const std::size_t len) const
+void to_string() const
+```
+prints this object to `std::cout`, intended for `<< base << derived << more_derived` and so on
+
+```c
+const int strcmp(const BasicStringAdapter<T> & other) const
+const int strcmp(const char * other) const
+const int strcmp(const T * other, const std::size_t len) const
 ```
 compares content
 
-for `is_trivially_copyable` `std::memcmp`/`std::memcpy` is used
+for a `ranged for loop` is used for direct comparison of elements
 
-for others a `for loop` is used
+`strcmp(const char * other)` should be reserved for when `T` is `char`
 
 ```c
 virtual void append_(const BasicStringAdapter<T> & what)
@@ -276,18 +278,19 @@ void init(const T * ptr)
 void init(const T * ptr, std::size_t length)
 ```
 ```c
-    // intended to be used in constructors:
-        ListAdapter() {
-            init(nullptr);
-        }
+    template <typename T>
+    struct ListAdapter : public BasicStringAdapter<T> {
+        mutable std::list<T> list;
+        mutable std::size_t len;
+
+        using BASE = BasicStringAdapter<T>;
+        BASIC_STRING_ADAPTER_USING_BASE(BASE);
+
+        // this uses `init` in constructors
+        BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ListAdapter, T)
         
-        ListAdapter(const T * ptr) {
-            init(ptr);
-        }
-        
-        ListAdapter(const T * ptr, const std::size_t length) {
-            init(ptr, length);
-        }
+        // ...
+    };
 ```
 
 ```c

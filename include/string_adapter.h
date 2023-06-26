@@ -10,6 +10,22 @@
 #include <memory>
 #include "indexed_iterator.h"
 
+template <class T, class E>
+using STRING_ADAPTER__FIRST = T;
+
+// a templated std::hash that accepts any class which contains the function hashCode with the signature std::size_t () const
+
+template <typename T>
+struct std::hash<STRING_ADAPTER__FIRST<T, typename std::enable_if<
+    std::is_member_function_pointer<decltype(static_cast<std::size_t(T::*)() const>(&T::hashCode))>::value
+>::type>>
+{
+    std::size_t operator()(const T & x) const
+    {
+        return x.hashCode();
+    }
+};
+
 namespace StringAdapter {
 /*
 
@@ -116,8 +132,333 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
 */
 
+    template <typename T1, typename T2>
+    static int compare_2(const T1 & a, const T2 & b) {
+        if (a < b) {
+            return 1;
+        }
+        if (b < a) {
+            return -1;
+        }
+        return 0;
+    }
+
+    template <class InputIt1, class InputIt2>
+    static int lexicographical_compare_2(InputIt1 first1, InputIt1 last1,
+                                InputIt2 first2, InputIt2 last2)
+    {
+        for (; (first1 != last1) && (first2 != last2); ++first1, (void) ++first2)
+        {
+            int r = compare_2(*first1, *first2);
+            if (r != 0) {
+                return r;
+            }
+        }
+
+        if (first1 == last1) {
+            if (first2 == last2) {
+                // first1 is end
+                // first2 is end
+                return 0; // contents equal
+            } else {
+                // first1 is end
+                // first2 is not end
+                return -1;
+            }
+        } else {
+            // first1 is not end
+            // first2 is end
+            return 1;
+        }
+    }
+
+    template <class F>
+    static void compare_3_func(const F & fa, const F & fb, int & r)
+    {
+        if (r == 0) {
+            r = compare_2(fa, fb);
+        }
+    }
+
+    template <typename C, class Tuple, std::size_t... Is>
+    static int compare_3_tuple(const C & a_, const C & b_, const Tuple& t, std::index_sequence<Is...>)
+    {
+        int r = 0;
+        (compare_3_func(a_.*(std::get<Is>(t)), b_.*(std::get<Is>(t)), r) , ...);
+        return r;
+    }
+
+    template <typename C, typename ... T>
+    static int compare_3(const C & a_, const C & b_, const T & ... args) {
+        return compare_3_tuple(a_, b_, std::tie(args...), std::index_sequence_for<T...>{});
+    }
+
+    template <class F>
+    static void hash_3_func(const F & fa, std::size_t & hash)
+    {
+        hash = 31 * hash + std::hash<F>()(fa);
+    }
+
+    template <typename C, class Tuple, std::size_t... Is>
+    static std::size_t hash_3_tuple(const C & a_, const Tuple& t, std::index_sequence<Is...>)
+    {
+        std::size_t hashCode_ = 1;
+        (hash_3_func(a_.*(std::get<Is>(t)), hashCode_) , ...);
+        return hashCode_;
+    }
+
+    template <typename C, typename ... T>
+    static std::size_t hash_3(const C & a_, const T & ... args) {
+        return hash_3_tuple(a_, std::tie(args...), std::index_sequence_for<T...>{});
+    }
+
+    template <typename C, typename IT_CBEGIN_FUNC, typename IT_CEND_FUNC>
+    static int compare_3_iterator(const C & a_, const C & b_, const IT_CBEGIN_FUNC & b1, const IT_CEND_FUNC & e1) {
+        return lexicographical_compare_2((a_.*b1)(), (a_.*e1)(), (b_.*b1)(), (b_.*e1)());
+    }
+
+    template <typename C, typename T>
+    static std::size_t hash_3_iterator(const C & a_) {
+        std::size_t hashCode_ = 1;
+        for(const T & item : a_) {
+            hashCode_ = 31 * hashCode_ + std::hash<T>()(item);
+        }
+        return hashCode_;
+    }
+
+    template <typename C>
+    struct Comparable {
+
+        std::function<int(const C & a, const C & b)> c;
+
+        Comparable() = default;
+
+        Comparable(std::function<int(const C & a, const C & b)> f) {
+            c = f;
+        }
+
+        Comparable(const Comparable<C> & other) {
+            c = other.c;
+        }
+
+        Comparable(Comparable<C> && other) {
+            c = other.c;
+        }
+
+        Comparable<C> & operator = (const Comparable<C> & other) {
+            c = other.c;
+            return *this;
+        }
+
+        Comparable<C> & operator = (Comparable<C> && other) {
+            c = other.c;
+            return *this;
+        }
+
+        int operator < (const C & x) const {
+            return c(static_cast<const C&>(*this), x) < 0;
+        }
+        int operator <= (const C & x) const {
+            return c(static_cast<const C&>(*this), x) <= 0;
+        }
+        int operator == (const C & x) const {
+            return c(static_cast<const C&>(*this), x) == 0;
+        }
+        int operator != (const C & x) const {
+            return c(static_cast<const C&>(*this), x) != 0;
+        }
+        int operator > (const C & x) const {
+            return c(static_cast<const C&>(*this), x) > 0;
+        }
+        int operator >= (const C & x) const {
+            return c(static_cast<const C&>(*this), x) >= 0;
+        }
+    };
+
+    template <typename C>
+    struct Hashable {
+
+        std::function<std::size_t(const C & a)> c;
+
+        Hashable() = default;
+
+        Hashable(std::function<std::size_t(const C & a)> f) {
+            c = f;
+        }
+
+        Hashable(const Hashable<C> & other) {
+            c = other.c;
+        }
+
+        Hashable(Hashable<C> && other) {
+            c = other.c;
+        }
+
+        Hashable<C> & operator = (const Hashable<C> & other) {
+            c = other.c;
+            return *this;
+        }
+
+        Hashable<C> & operator = (Hashable<C> && other) {
+            c = other.c;
+            return *this;
+        }
+
+        std::size_t hashCode() const noexcept {
+            // https://docs.oracle.com/javase/8/docs/api/java/util/List.html#hashCode--
+            return c(static_cast<const C&>(*this));
+        }
+    };
+
+#define COMPARABLE_USING_BASE(BASE) \
+        using BASE::operator <; \
+        using BASE::operator <=; \
+        using BASE::operator ==; \
+        using BASE::operator !=; \
+        using BASE::operator >=; \
+        using BASE::operator >; \
+
+#define HASHABLE_USING_BASE(BASE) \
+        using BASE::hashCode; \
+
     template <typename T>
-    struct BasicStringAdapter {
+    class Shared :
+        public Comparable<Shared<T>>,
+        public Hashable<Shared<T>>
+    {
+        std::shared_ptr<T> ptr_;
+        std::size_t len_ = 0;
+
+        public:
+
+        COMPARABLE_USING_BASE(Comparable<Shared<T>>);
+        HASHABLE_USING_BASE(Hashable<Shared<T>>);
+
+        Shared() :
+            Shared<T>::Comparable([](auto & a, auto & b) { return compare_3(a, b, &Shared<T>::ptr_, &Shared<T>::len_); }),
+            Shared<T>::Hashable([](auto & a) { return hash_3(a, &Shared<T>::ptr_, &Shared<T>::len_); })
+        {}
+        
+        Shared(T * ptr, std::size_t len) : Shared(ptr, len, [](auto p) {}) {}
+
+        template <class Deleter>
+        Shared(T * ptr, std::size_t len, Deleter deleter) : Shared() {
+            if (ptr != nullptr) {
+                ptr_ = std::shared_ptr<T>(ptr, deleter);
+                len_ = len;
+            }
+        }
+
+        Shared(const Shared<T> & other) : Comparable<Shared<T>>(other), Hashable<Shared<T>>(other) {
+            ptr_ = other.ptr_;
+            len_ = other.len_;
+        }
+        Shared(Shared<T> && other) : Comparable<Shared<T>>(std::move(other)), Hashable<Shared<T>>(std::move(other)) {
+            ptr_ = std::move(other.ptr_);
+            len_ = other.len_;
+            other.len_ = 0;
+        }
+        Shared<T> & operator =(const Shared<T> & other) {
+            Comparable<Shared<T>>::operator =(other);
+            Hashable<Shared<T>>::operator =(other);
+            ptr_ = other.ptr_;
+            len_ = other.len;
+            return *this;
+        }
+        Shared<T> & operator =(Shared<T> && other) {
+            Comparable<Shared<T>>::operator =(std::move(other));
+            Hashable<Shared<T>>::operator =(std::move(other));
+            ptr_ = std::move(other.ptr_);
+            len_ = other.len_;
+            other.len_ = 0;
+            return *this;
+        }
+
+        T * ptr() {
+            return ptr_.get();
+        }
+
+        std::size_t length() {
+            return len_;
+        }
+
+        std::size_t lengthInBytes() {
+            return len_ * sizeof(T);
+        }
+    };
+
+    template <typename T>
+    class CShared :
+        public Comparable<CShared<T>>,
+        public Hashable<CShared<T>>
+    {
+        mutable std::shared_ptr<const T> ptr_;
+        mutable std::size_t len_ = 0;
+
+        public:
+
+        COMPARABLE_USING_BASE(Comparable<CShared<T>>);
+        HASHABLE_USING_BASE(Hashable<CShared<T>>);
+        
+        CShared() :
+            CShared<T>::Comparable([](auto & a, auto & b) { return compare_3(a, b, &CShared<T>::ptr_, &CShared<T>::len_); }),
+            CShared<T>::Hashable([](auto & a) { return hash_3(a, &CShared<T>::ptr_, &CShared<T>::len_); })
+        {}
+        
+        CShared(const T * ptr, std::size_t len) : CShared(ptr, len, [](auto p) {}) {}
+
+        template <class Deleter>
+        CShared(const T * ptr, std::size_t len, Deleter deleter) : CShared() {
+            if (ptr != nullptr) {
+                ptr_ = std::shared_ptr<const T>(ptr, deleter);
+                len_ = len;
+            }
+        }
+        CShared(const CShared<T> & other) : Comparable<CShared<T>>(other), Hashable<CShared<T>>(other) {
+            ptr_ = other.ptr_;
+            len_ = other.len_;
+        }
+        CShared(CShared<T> && other) : Comparable<CShared<T>>(std::move(other)), Hashable<CShared<T>>(std::move(other)) {
+            ptr_ = std::move(other.ptr_);
+            len_ = other.len_;
+            other.len_ = 0;
+        }
+        CShared<T> & operator =(const CShared<T> & other) {
+            Comparable<CShared<T>>::operator =(other);
+            Hashable<CShared<T>>::operator =(other);
+            ptr_ = other.ptr_;
+            len_ = other.len;
+            return *this;
+        }
+        CShared<T> & operator =(CShared<T> && other) {
+            Comparable<CShared<T>>::operator =(std::move(other));
+            Hashable<CShared<T>>::operator =(std::move(other));
+            ptr_ = std::move(other.ptr_);
+            len_ = other.len_;
+            other.len_ = 0;
+            return *this;
+        }
+
+        const T * ptr() const {
+            return ptr_.get();
+        }
+
+        const std::size_t length() const {
+            return len_;
+        }
+
+        const std::size_t lengthInBytes() const {
+            return len_ * sizeof(T);
+        }
+    };
+
+    template <typename T>
+    struct BasicStringAdapter :
+        public Comparable<BasicStringAdapter<T>>,
+        public Hashable<BasicStringAdapter<T>>
+    {
+        COMPARABLE_USING_BASE(Comparable<BasicStringAdapter<T>>);
+        HASHABLE_USING_BASE(Hashable<BasicStringAdapter<T>>);
         
 #define BASIC_STRING_ADAPTER_SLICE_USING_BASE(BASE) \
         using BASE::BASE; \
@@ -126,6 +467,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::rbegin; \
         using BASE::rend; \
         using BASE::operator[]; \
+        COMPARABLE_USING_BASE(BASE); \
+        HASHABLE_USING_BASE(BASE); \
         using BASE::get_origin; \
         using BASE::get_origin_; \
 
@@ -140,20 +483,34 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::crbegin; \
         using BASE::crend; \
         using BASE::operator[]; \
+        COMPARABLE_USING_BASE(BASE); \
+        HASHABLE_USING_BASE(BASE); \
         using BASE::get_origin; \
         using BASE::get_origin_; \
     
-        class Slice {
+        class Slice :
+            public Comparable<Slice>,
+            public Hashable<Slice>
+        {
             BasicStringAdapter<T> * origin = nullptr;
             std::size_t start_ = 0;
             std::size_t end_ = 0;
 
             public:
 
-            Slice(BasicStringAdapter<T>* origin, std::size_t start, std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start) {}
+            COMPARABLE_USING_BASE(Comparable<Slice>);
+            HASHABLE_USING_BASE(Hashable<Slice>);
 
-            using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T&>;
-            using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T&>;
+            Slice(BasicStringAdapter<T>* origin, std::size_t start, std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start),
+                Slice::Comparable([](auto & a, auto & b) { return compare_3_iterator(a, b, &Slice::cbegin, &Slice::cend); }),
+                Slice::Hashable([](auto & a) { return hash_3_iterator<Slice, T>(a); })
+            {}
+
+            using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T>;
+            using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T>;
+
+            using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T>;
+            using reverse_const_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T>;
 
             iterator begin() {
                 return iterator(origin, start_);
@@ -169,6 +526,38 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
             reverse_iterator rend() {
                 return reverse_iterator(origin, start_-1);
+            }
+
+            const_iterator begin() const {
+                return const_iterator(origin, start_);
+            }
+
+            const_iterator end() const {
+                return const_iterator(origin, end_+1);
+            }
+
+            const_iterator cbegin() const {
+                return const_iterator(origin, start_);
+            }
+
+            const_iterator cend() const {
+                return const_iterator(origin, end_+1);
+            }
+
+            reverse_const_iterator rbegin() const {
+                return reverse_const_iterator(origin, end_);
+            }
+
+            reverse_const_iterator rend() const {
+                return reverse_const_iterator(origin, start_-1);
+            }
+
+            reverse_const_iterator rcbegin() const {
+                return reverse_const_iterator(origin, end_);
+            }
+
+            reverse_const_iterator rcend() const {
+                return reverse_const_iterator(origin, start_-1);
             }
 
             T & operator[] (const std::size_t index) {
@@ -195,17 +584,26 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             };
         };
         
-        class CSlice {
+        class CSlice :
+            public Comparable<CSlice>,
+            public Hashable<CSlice>
+        {
             const BasicStringAdapter<T> * origin = nullptr;
             std::size_t start_ = 0;
             std::size_t end_ = 0;
 
             public:
 
-            CSlice(const BasicStringAdapter<T>* origin, const std::size_t start, const std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start) {}
+            COMPARABLE_USING_BASE(Comparable<CSlice>);
+            HASHABLE_USING_BASE(Hashable<CSlice>);
 
-            using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T&>;
-            using const_reverse_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T&>;
+            CSlice(const BasicStringAdapter<T>* origin, const std::size_t start, const std::size_t end) : origin(origin), start_(start), end_(start < end ? end : start),
+                CSlice::Comparable([](auto & a, auto & b) { return compare_3_iterator(a, b, &CSlice::cbegin, &CSlice::cend); }),
+                CSlice::Hashable([](auto & a) { return hash_3_iterator<CSlice, T>(a); })
+            {}
+
+            using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T>;
+            using reverse_const_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T>;
 
             const const_iterator cbegin() const {
                 return const_iterator(origin, start_);
@@ -223,19 +621,19 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 return cend();
             }
 
-            const const_reverse_iterator crbegin() const {
-                return const_reverse_iterator(origin, end_);
+            const reverse_const_iterator crbegin() const {
+                return reverse_const_iterator(origin, end_);
             }
 
-            const const_reverse_iterator crend() const {
-                return const_reverse_iterator(origin, start_-1);
+            const reverse_const_iterator crend() const {
+                return reverse_const_iterator(origin, start_-1);
             }
 
-            const const_reverse_iterator rbegin() const {
+            const reverse_const_iterator rbegin() const {
                 return crbegin();
             }
 
-            const const_reverse_iterator rend() const {
+            const reverse_const_iterator rend() const {
                 return crend();
             }
 
@@ -261,6 +659,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         typedef T TYPE;
 
+        BasicStringAdapter<T>() :
+                BasicStringAdapter<T>::Comparable([](auto & a, auto & b) { return compare_3_iterator(a, b, &BasicStringAdapter<T>::cbegin, &BasicStringAdapter<T>::cend); }),
+                BasicStringAdapter<T>::Hashable([](auto & a) { return hash_3_iterator<BasicStringAdapter<T>, T>(a); })
+        {}
+
+        void to_string() const {
+            std::cout << *this;
+        }
+
         mutable std::shared_ptr<const T> new_line;
         mutable std::shared_ptr<const T> eof;
 
@@ -272,8 +679,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *eof;
         }
 
-        using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T&>;
-        using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T&>;
+        using iterator = IndexedIterator::iterator<BasicStringAdapter<T>, T>;
+        using const_iterator = IndexedIterator::iterator<const BasicStringAdapter<T>, const T>;
 
         virtual iterator begin() {
             return iterator(this, 0);
@@ -299,8 +706,8 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return cend();
         }
 
-        using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T&>;
-        using const_reverse_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T&>;
+        using reverse_iterator = IndexedIterator::reverse_iterator<BasicStringAdapter<T>, T>;
+        using reverse_const_iterator = IndexedIterator::reverse_iterator<const BasicStringAdapter<T>, const T>;
 
         virtual reverse_iterator rbegin() {
             return reverse_iterator(this, length()-1);
@@ -310,19 +717,19 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return reverse_iterator(this, -1);
         }
 
-        virtual const const_reverse_iterator crbegin() const {
-            return const_reverse_iterator(this, length()-1);
+        virtual const reverse_const_iterator crbegin() const {
+            return reverse_const_iterator(this, length()-1);
         }
 
-        virtual const const_reverse_iterator crend() const {
-            return const_reverse_iterator(this, -1);
+        virtual const reverse_const_iterator crend() const {
+            return reverse_const_iterator(this, -1);
         }
 
-        virtual const const_reverse_iterator rbegin() const {
+        virtual const reverse_const_iterator rbegin() const {
             return crbegin();
         }
 
-        virtual const const_reverse_iterator rend() const {
+        virtual const reverse_const_iterator rend() const {
             return crend();
         }
 
@@ -345,13 +752,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         };
         
         // must never be null
-        virtual T* data() = 0;
-        virtual const T* data() const = 0;
-        virtual const bool data_is_allocated() const = 0;
+        virtual Shared<T> data() = 0;
+        virtual const CShared<T> data() const = 0;
 
-        virtual T* c_str_() = 0;
-        virtual const T* c_str_() const = 0;
-        virtual const bool c_str__is_allocated() const = 0;
+        virtual Shared<char> c_str_() {
+            return data();
+        }
+        virtual const CShared<char> c_str_() const {
+            return data();
+        }
         
         virtual std::vector<T>* data_as_vector() = 0;
         virtual const std::vector<T>* data_as_vector() const = 0;
@@ -363,58 +772,30 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         const std::size_t size() const {
             return length();
         }
-        
-        const bool operator == (const BasicStringAdapter<T> & other) const {
-            auto* data_ = data();
-            auto* other_data_ = other.data();
-            auto r = mem_eq(data_, other_data_, length(), other.length()) == 0;
-            if (data_is_allocated()) delete[] data_;
-            if (other.data_is_allocated()) delete[] other_data_;
-            return r;
+
+        virtual Shared<char> c_str() = 0;
+        virtual const CShared<char> c_str() const = 0;
+
+        const bool operator == (const char * other) const {
+            return strcmp(other) == 0;
         }
 
-        const bool operator != (const BasicStringAdapter<T> & other) const {
-            return !(*this == other);
+        const bool operator != (const char* other) const {
+            return strcmp(other) != 0;
         }
 
-        virtual char* c_str() = 0;
-        virtual const char* c_str() const = 0;
-        virtual const bool c_str_is_allocated() const = 0;
-        
-        template <typename T2 = T, typename std::enable_if<std::is_trivially_copyable<T2>::value, std::size_t>::type = 0>
-        const int mem_eq(const T2* s1, const T2* s2, const std::size_t len1, const std::size_t len2) const {
-            if (len1 == len2) {
-                return std::memcmp(s1, s2, sizeof(T2)*len1);
-            }
-            return -1;
-        }
-        
-        template <typename T2 = T, typename std::enable_if<!std::is_trivially_copyable<T2>::value, std::size_t>::type = 0>
-        const int mem_eq(const T2* s1, const T2* s2, const std::size_t len1, const std::size_t len2) const {
-            if (len1 == len2) {
-                for(std::size_t s = 0; s < len1; s++) {
-                    if (s1[s] != s2[s]) {
-                        // we cannot use s1[s] - s2[s] since - operators might not be available nor sensible
-                        return -1;
-                    }
-                }
-                return 0;
-            }
-            return 1;
+        const int strcmp(const BasicStringAdapter<T> & other) const {
+            return lexicographical_compare_2(begin(), end(), other.begin(), other.end());
         }
 
-        template <typename T2 = T, typename std::enable_if<std::is_trivially_copyable<T2>::value, std::size_t>::type = 0>
-        void mem_cpy(T2* dest, const T2* src, const std::size_t len) const {
-            std::memcpy(dest, src, sizeof(T2)*len);
+        const int strcmp(const char * other) const {
+            return strcmp(other, strlen(other));
         }
-        
-        template <typename T2 = T, typename std::enable_if<!std::is_trivially_copyable<T2>::value, std::size_t>::type = 0>
-        void mem_cpy(T2* dest, const T2* src, const std::size_t len) const {
-            for(std::size_t s = 0; s < len; s++) {
-                dest[s] = src[s];
-            }
+
+        const int strcmp(const T * other, const std::size_t len) const {
+            return lexicographical_compare_2(begin(), end(), IndexedIterator::ptr_iterator<const T>(other, 0), IndexedIterator::ptr_iterator<const T>(other, len));
         }
-        
+
         virtual void append_(const BasicStringAdapter<T> & what) {
             insert_(what, -1);
         }
@@ -494,7 +875,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         std::vector<std::shared_ptr<BasicStringAdapter<T>>> lines() const {
             const std::size_t len = length();
             if (len == 0) {
-                return {};
+                return {std::shared_ptr<BasicStringAdapter<T>>(newAdapter())};
             }
 
             return split(get_new_line());
@@ -503,33 +884,21 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         const std::size_t line_count() const {
             return lines().size();
         }
-
-        virtual const bool operator == (const T* other) const {
-            auto* data_ = data();
-            bool r = mem_eq(data_, other, length(), strlen(other)) == 0;
-            if (data_is_allocated()) delete[] data_;
-            return r;
-        }
-
-        const bool operator != (const T* other) const {
-            return !(*this == other);
-        }
     };
     
 #define BASIC_STRING_ADAPTER_USING_BASE(BASE) \
         using BASE::BASE; \
         using BASE::get_item_at_index; \
         using BASE::operator[]; \
+        COMPARABLE_USING_BASE(BASE); \
+        HASHABLE_USING_BASE(BASE); \
         using BASE::data; \
-        using BASE::data_is_allocated; \
-        using BASE::c_str_; \
-        using BASE::c_str__is_allocated; \
         using BASE::data_as_vector; \
+        using BASE::c_str; \
+        using BASE::c_str_; \
+        using BASE::size; \
         using BASE::length; \
         using BASE::resize; \
-        using BASE::size; \
-        using BASE::c_str; \
-        using BASE::c_str_is_allocated; \
         using BASE::append_; \
         using BASE::insert_; \
         using BASE::replace_; \
@@ -542,10 +911,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::lines; \
         using BASE::split; \
         using BASE::line_count; \
-        using BASE::mem_eq; \
-        using BASE::mem_cpy; \
-        using BASE::operator==; \
-        using BASE::operator!=; \
+        using BASE::strcmp; \
         using BASE::new_line; \
         using BASE::eof; \
         using BASE::begin; \
@@ -557,14 +923,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE::crbegin; \
         using BASE::crend; \
         using BASE::slice; \
+        using BASE::cslice; \
         using typename BASE::iterator; \
         using typename BASE::const_iterator; \
         using typename BASE::reverse_iterator; \
-        using typename BASE::const_reverse_iterator; \
+        using typename BASE::reverse_const_iterator; \
 
 #define BASIC_STRING_ADAPTER_USING(BASE) \
         BASIC_STRING_ADAPTER_USING_BASE(BASE) \
-        using BASE::operator=; \
+        using BASE::operator =; \
         using BASE::init; \
 
 #define INTERNAL______BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTOR__TO_SHARED(ITEM) std::shared_ptr<T>(new T(ITEM))
@@ -613,7 +980,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             init(ptr, length, new_line, eof); \
         }
 
-    template<typename T>
+    template <typename T>
     struct ListAdapter : public BasicStringAdapter<T> {
         mutable std::list<T> list;
         mutable std::size_t len;
@@ -623,14 +990,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
 
         BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ListAdapter, T)
         
-        ListAdapter(const ListAdapter & other) {
+        ListAdapter(const ListAdapter & other) : BasicStringAdapter<T>(other) {
             list = other.list;
             len = other.len;
             new_line = other.new_line;
             eof = other.eof;
         }
         
-        const ListAdapter & operator=(const ListAdapter & other) const {
+        const ListAdapter & operator =(const ListAdapter & other) {
+            BasicStringAdapter<T>::operator =(other);
             list = other.list;
             len = other.len;
             new_line = other.new_line;
@@ -638,14 +1006,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *this;
         }
         
-        ListAdapter(ListAdapter && other) {
+        ListAdapter(ListAdapter && other) : BasicStringAdapter<T>(std::move(other)) {
             list = std::move(other.list);
             len = std::move(other.len);
             new_line = std::move(other.new_line);
             eof = std::move(other.eof);
         }
         
-        const ListAdapter & operator=(ListAdapter && other) const {
+        const ListAdapter & operator =(ListAdapter && other) {
+            BasicStringAdapter<T>::operator =(std::move(other));
             list = std::move(other.list);
             len = std::move(other.len);
             new_line = std::move(other.new_line);
@@ -686,40 +1055,24 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return len;
         }
 
-        T* data() override {
+        Shared<T> data() override {
             T* d = new T[len+1];
             std::size_t i = 0;
             for (const T & copy : list) {
                 d[i] = copy;
                 i++;
             }
-            return d;
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
-        const T* data() const override {
+        const CShared<T> data() const override {
             T* d = new T[len+1];
             std::size_t i = 0;
             for (const T & copy : list) {
                 d[i] = copy;
                 i++;
             }
-            return d;
-        }
-
-        const bool data_is_allocated() const override {
-            return true;
-        }
-
-        T* c_str_() override {
-            return data();
-        }
-
-        const T* c_str_() const override {
-            return data();
-        }
-
-        const bool c_str__is_allocated() const override {
-            return data_is_allocated();
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
         std::vector<T>* data_as_vector() override {
@@ -748,15 +1101,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 list.insert(std::next(list.begin(), clamp_pos(pos)), vec->begin(), vec->end()-1);
                 len += what.length();
             } else {
-                const T* p = what.data();
+                const CShared<T> p = what.data();
                 const std::size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
                     for(std::size_t s = 0; s < l; s++) {
-                        v[s] = p[s];
+                        v[s] = p.ptr()[s];
                     }
                 }
-                if (what.data_is_allocated()) delete[] p;
                 list.insert(std::next(list.begin(), clamp_pos(pos)), v.begin(), v.end());
                 len += l;
             }
@@ -795,14 +1147,13 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
     };
 
     // a reverse string
-    template<typename T>
+    template <typename T>
     struct ForwardListAdapter : public BasicStringAdapter<T> {
         mutable std::forward_list<T> forward_list;
         mutable std::size_t len;
 
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
-
         BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(ForwardListAdapter, T)
 
         virtual iterator begin() override {
@@ -833,33 +1184,27 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return reverse_iterator(this, length());
         }
 
-        virtual const const_reverse_iterator crbegin() const override {
-            return const_reverse_iterator(this, length());
+        virtual const reverse_const_iterator crbegin() const override {
+            return reverse_const_iterator(this, length());
         }
 
         virtual reverse_iterator rend() override {
             return reverse_iterator(this, 0);
         }
 
-        virtual const const_reverse_iterator crend() const override {
-            return const_reverse_iterator(this, 0);
+        virtual const reverse_const_iterator crend() const override {
+            return reverse_const_iterator(this, 0);
         }
         
-        const bool operator == (const T* other) const override {
-            auto* data_ = data();
-            bool r = mem_eq(data_+1, other, length(), strlen(other)) == 0;
-            if (data_is_allocated()) delete[] data_;
-            return r;
-        }
-
-        ForwardListAdapter(const ForwardListAdapter & other) {
+        ForwardListAdapter(const ForwardListAdapter & other) : BasicStringAdapter<T>(other) {
             forward_list = other.forward_list;
             len = other.len;
             new_line = other.new_line;
             eof = other.eof;
         }
         
-        const ForwardListAdapter & operator=(const ForwardListAdapter & other) const {
+        const ForwardListAdapter & operator =(const ForwardListAdapter & other) {
+            BasicStringAdapter<T>::operator =(other);
             forward_list = other.forward_list;
             len = other.len;
             new_line = other.new_line;
@@ -867,14 +1212,15 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return *this;
         }
         
-        ForwardListAdapter(ForwardListAdapter && other) {
+        ForwardListAdapter(ForwardListAdapter && other) : BasicStringAdapter<T>(std::move(other)) {
             forward_list = std::move(other.forward_list);
             len = std::move(other.len);
             new_line = std::move(other.new_line);
             eof = std::move(other.eof);
         }
         
-        const ForwardListAdapter & operator=(ForwardListAdapter && other) const {
+        const ForwardListAdapter & operator =(ForwardListAdapter && other) {
+            BasicStringAdapter<T>::operator =(std::move(other));
             forward_list = std::move(other.forward_list);
             len = std::move(other.len);
             new_line = std::move(other.new_line);
@@ -915,52 +1261,44 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return len;
         }
 
-        T* data() override {
+        Shared<T> data() override {
             T* d = new T[len+1];
             std::size_t i = 0;
             for (const T & copy : forward_list) {
                 d[i] = copy;
                 i++;
             }
-            return d;
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
-        const T* data() const override {
+        const CShared<T> data() const override {
             T* d = new T[len+1];
             std::size_t i = 0;
             for (const T & copy : forward_list) {
                 d[i] = copy;
                 i++;
             }
-            return d;
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
-        const bool data_is_allocated() const override {
-            return true;
-        }
-
-        T* c_str_() override {
+        Shared<T> c_str_() override {
             T* d = new T[len+1];
             std::size_t i = len;
             for (const T & copy : forward_list) {
                 d[i] = copy;
                 i--;
             }
-            return d;
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
-        const T* c_str_() const override {
+        const CShared<T> c_str_() const override {
             T* d = new T[len+1];
             std::size_t i = len;
             for (const T & copy : forward_list) {
                 d[i] = copy;
                 i--;
             }
-            return d;
-        }
-
-        const bool c_str__is_allocated() const override {
-            return true;
+            return {d, len, [](auto p) { delete[] p; }};
         }
 
         std::vector<T>* data_as_vector() override {
@@ -989,15 +1327,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 forward_list.insert_after(std::next(forward_list.begin(), clamp_pos(pos)), vec->begin(), vec->end()-1);
                 len += what.length();
             } else {
-                const T* p = what.data();
+                const CShared<T> p = what.data();
                 const std::size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
                     for(std::size_t s = 0; s < l; s++) {
-                        v[s] = p[s+1];
+                        v[s] = p.ptr()[s+1];
                     }
                 }
-                if (what.data_is_allocated()) delete[] p;
                 forward_list.insert_after(std::next(forward_list.begin(), clamp_pos(pos)), v.begin(), v.end());
                 len += l;
             }
@@ -1037,35 +1374,36 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         }
     };
 
-    template<typename T>
+    template <typename T>
     struct VectorAdapter : public BasicStringAdapter<T> {
         mutable std::vector<T> vector;
         
         using BASE = BasicStringAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
-
         BASIC_STRING_ADAPTER_USING_BASE_CONSTRUCTORS(VectorAdapter, T)
 
-        VectorAdapter(const VectorAdapter & other) {
+        VectorAdapter(const VectorAdapter & other) : BasicStringAdapter<T>(other) {
             vector = other.vector;
             new_line = other.new_line;
             eof = other.eof;
         }
         
-        const VectorAdapter & operator=(const VectorAdapter & other) const {
+        const VectorAdapter & operator =(const VectorAdapter & other) {
+            BasicStringAdapter<T>::operator =(other);
             vector = other.vector;
             new_line = other.new_line;
             eof = other.eof;
             return *this;
         }
         
-        VectorAdapter(VectorAdapter && other) {
+        VectorAdapter(VectorAdapter && other) : BasicStringAdapter<T>(std::move(other)) {
             vector = std::move(other.vector);
             new_line = std::move(other.new_line);
             eof = std::move(other.eof);
         }
         
-        const VectorAdapter & operator=(VectorAdapter && other) const {
+        const VectorAdapter & operator =(VectorAdapter && other) {
+            BasicStringAdapter<T>::operator =(std::move(other));
             vector = std::move(other.vector);
             new_line = std::move(other.new_line);
             eof = std::move(other.eof);
@@ -1099,30 +1437,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
             return vector[index];
         }
         
-        T* data() override {
-            return vector.data();
+        Shared<T> data() override {
+            return {vector.data(), length()};
         }
 
-        const T* data() const override {
-            return vector.data();
+        const CShared<T> data() const override {
+            return {vector.data(), length()};
         }
         
-        const bool data_is_allocated() const override {
-            return false;
-        }
-
-        T* c_str_() override {
-            return data();
-        }
-
-        const T* c_str_() const override {
-            return data();
-        }
-
-        const bool c_str__is_allocated() const override {
-            return data_is_allocated();
-        }
-
         std::vector<T>* data_as_vector() override {
             return &vector;
         }
@@ -1152,15 +1474,14 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
                 // we can take advantage of vector
                 vector.insert(vector.begin() + clamp_pos(pos), vec->begin(), vec->end()-1);
             } else {
-                const T* p = what.data();
+                const CShared<T> p = what.data();
                 const std::size_t l = what.length();
                 auto v = std::vector<T>(l);
                 if (l != 0) {
                     for(std::size_t s = 0; s < l; s++) {
-                        v[s] = p[s];
+                        v[s] = p.ptr()[s];
                     }
                 }
-                if (what.data_is_allocated()) delete[] p;
                 vector.insert(vector.begin() + clamp_pos(pos), v.begin(), v.end());
             }
         }
@@ -1197,7 +1518,7 @@ using YourClass_T = YourClass<char, StringAdapter::CharAdapter>;
         using BASE = VectorAdapter<T>;
         BASIC_STRING_ADAPTER_USING_BASE(BASE);
         using BASE::vector;
-        
+
         void insert_(const BasicStringAdapter<T> & what, const std::size_t pos) override {
             vector.reserve(length() + what.length() + 1);
             BASE::insert_(what, pos);
@@ -1230,16 +1551,15 @@ struct ADAPTER##_impl : ADAPTER<T> { \
     void print(const char* str) { \
         const std::size_t len = size(); \
         std::cout << str << ". (size (excluding null): " << len << ") "; \
-        const T* data_ = data(); \
+        const CShared<T> data_ = data(); \
         for (std::size_t i = 0; i <= len; i++) { \
-            if (data_[i] == get_end_of_file()) { \
+            if (data_.ptr()[i] == get_end_of_file()) { \
                 std::cout << "\\0" << ' '; \
             } else { \
-                std::cout << data_[i] << ' '; \
+                std::cout << data_.ptr()[i] << ' '; \
             } \
         } \
         std::cout << '\n'; \
-        if (data_is_allocated()) { delete[] data_; } \
     } \
 \
     void append(const std::string & s) { \
@@ -1285,23 +1605,19 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         erase_(pos, len); \
     } \
 \
-    char * c_str() override { \
+    Shared<char> c_str() override { \
         return c_str_(); \
     } \
 \
-    const char * c_str() const override { \
+    const CShared<char> c_str() const override { \
         return c_str_(); \
-    } \
-\
-    const bool c_str_is_allocated() const override { \
-        return c_str__is_allocated(); \
     } \
 \
     const void deleteSelf() const override { \
         delete (ADAPTER##_impl<T>*) this; \
     } \
 \
-    struct Slice : BASE::Slice { \
+    struct Slice : public BASE::Slice { \
         using BASE_S = typename BASE::Slice; \
         BASIC_STRING_ADAPTER_SLICE_USING_BASE(BASE_S) \
         ADAPTER##_impl<T>* get_origin() override { \
@@ -1309,7 +1625,7 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         }; \
     }; \
 \
-    struct CSlice : BASE::CSlice { \
+    struct CSlice : public BASE::CSlice { \
         using BASE_S = typename BASE::CSlice; \
         BASIC_STRING_ADAPTER_SLICE_USING_BASE(BASE_S) \
         const ADAPTER##_impl<T>* get_origin() override { \
@@ -1373,6 +1689,15 @@ struct ADAPTER##_impl : ADAPTER<T> { \
     using CharForwardListAdapter = ForwardListAdapter_impl<char>;
     
     using CharAdapter = CharVectorAdapter;
+}
+
+template <typename T>
+::std::ostream& operator <<(::std::ostream& os, const StringAdapter::BasicStringAdapter<T> & this_) {
+    os << "\"";
+    auto s = this_.c_str();
+    os << s.ptr();
+    os << "\"";
+    return os;
 }
 
 #endif

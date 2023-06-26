@@ -5,10 +5,10 @@
 
 using namespace StringAdapter;
 
-#define data_is_null(t) { auto * data_ = t.data(); ASSERT_EQ(data_, nullptr); if (t.data_is_allocated()) { delete[] data_; } }
-#define data_is_not_null(t) { auto * data_ = t.data(); ASSERT_NE(data_, nullptr); if (t.data_is_allocated()) { delete[] data_; } }
-#define data_is_val(t, i_, value_) { auto * data_ = t.data(); ASSERT_EQ(data_[i_], value_); if (t.data_is_allocated()) { delete[] data_; } }
-#define data_is_not_val(t, i_, value_) { auto * data_ = t.data(); ASSERT_NE(data_[i_], value_); if (t.data_is_allocated()) { delete[] data_; } }
+#define data_is_null(t) { auto data_ = t.data(); ASSERT_EQ(data_.ptr(), nullptr); }
+#define data_is_not_null(t) { auto data_ = t.data(); ASSERT_NE(data_.ptr(), nullptr); }
+#define data_is_val(t, i_, value_) { auto data_ = t.data(); ASSERT_EQ(data_.ptr()[i_], value_); }
+#define data_is_not_val(t, i_, value_) { auto data_ = t.data(); ASSERT_NE(data_.ptr()[i_], value_); }
 
 TEST(ResizingVectorAdapter_Core, initialization_data_checking) {
     CharResizingVectorAdapter a;
@@ -553,6 +553,53 @@ TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) 
     auto & s2 = *sp2; \
     ASSERT_EQ(*(s2.IT_END()-1), '4'); \
     delete sp2; \
+} \
+\
+TEST(ResizingVectorAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 57"); \
+    A a = "12345"; \
+    std::cout << "a = " << a << "\n"; \
+} \
+\
+TEST(VectorAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 58"); \
+    B b = "12345"; \
+    std::cout << "b = " << b << "\n"; \
+} \
+\
+TEST(ListAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 59"); \
+    C c = "12345"; \
+    std::cout << "c = " << c << "\n"; \
+} \
+\
+TEST(ForwardListAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 60"); \
+    D d = "12345"; \
+    std::cout << "d = " << d << "\n"; \
+} \
+TEST(ResizingVectorAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 61"); \
+    A a = "12345"; \
+    std::cout << "hash a = " << std::hash<A>()(a) << "\n"; \
+} \
+\
+TEST(VectorAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 62"); \
+    B b = "12345"; \
+    std::cout << "hash b = " << std::hash<B>()(b) << "\n"; \
+} \
+\
+TEST(ListAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 63"); \
+    C c = "12345"; \
+    std::cout << "hash c = " << std::hash<C>()(c) << "\n"; \
+} \
+\
+TEST(ForwardListAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+    puts("TEST_ID: 64"); \
+    D d = "12345"; \
+    std::cout << "hash d = " << std::hash<D>()(d) << "\n"; \
 } \
 
 TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, iterator, begin, end, slice, slice)
