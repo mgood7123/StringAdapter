@@ -1570,6 +1570,10 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         append_(ADAPTER##_impl<T>(s, strlen(s))); \
     } \
 \
+    void append(const T* s, std::size_t len) { \
+        append_(ADAPTER##_impl<T>(s, len)); \
+    } \
+\
     void append(const T & c) { \
         T s[2] = { c, get_end_of_file() }; \
         append_(ADAPTER##_impl<T>(s, 1)); \
@@ -1583,6 +1587,10 @@ struct ADAPTER##_impl : ADAPTER<T> { \
         insert_(ADAPTER##_impl<T>(s, strlen(s)), pos, len); \
     } \
 \
+    void insert(const std::size_t pos, const std::size_t len, const char* s, const std::size_t len2) { \
+        insert_(ADAPTER##_impl<T>(s, len2), pos, len); \
+    } \
+\
     void insert(const std::size_t pos, const std::size_t len, const T & c) { \
         T s[2] = { c, get_end_of_file() }; \
         insert_(ADAPTER##_impl<T>(s, 1), pos, len); \
@@ -1594,6 +1602,10 @@ struct ADAPTER##_impl : ADAPTER<T> { \
 \
     void replace(const std::size_t pos, const std::size_t len, const char* s) { \
         replace_(ADAPTER##_impl<T>(s, strlen(s)), pos, len); \
+    } \
+\
+    void replace(const std::size_t pos, const std::size_t len, const char* s, const std::size_t len2) { \
+        replace_(ADAPTER##_impl<T>(s, len2), pos, len); \
     } \
 \
     void replace(const std::size_t pos, const std::size_t len, const char & c) { \
