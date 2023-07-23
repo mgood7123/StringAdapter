@@ -1,0 +1,1024 @@
+#ifndef INDEXED_ITERATOR_H
+#define INDEXED_ITERATOR_H
+
+#include <cstddef>
+#include <iostream>
+#include <iterator>
+
+#define INDEXED_ITERATOR_EMBED_COMMAS(...) __VA_ARGS__
+
+#define INDEXED_ITERATOR_OPS(iterator, op_plus, op_minus, index_operator)      \
+    iterator operator++(int) {                                                 \
+        iterator old(origin, index);                                           \
+        index op_plus##op_plus;                                                \
+        return old;                                                            \
+    }                                                                          \
+                                                                               \
+    iterator operator++(int) const {                                           \
+        iterator old(origin, index);                                           \
+        index op_plus##op_plus;                                                \
+        return old;                                                            \
+    }                                                                          \
+                                                                               \
+    iterator operator--(int) {                                                 \
+        iterator old(origin, index);                                           \
+        index op_minus##op_minus;                                              \
+        return old;                                                            \
+    }                                                                          \
+                                                                               \
+    iterator operator--(int) const {                                           \
+        iterator old(origin, index);                                           \
+        index op_minus##op_minus;                                              \
+        return old;                                                            \
+    }                                                                          \
+                                                                               \
+    iterator operator++() {                                                    \
+        index op_plus##op_plus;                                                \
+        return iterator(origin, index);                                        \
+    }                                                                          \
+                                                                               \
+    iterator operator++() const {                                              \
+        index op_plus##op_plus;                                                \
+        return iterator(origin, index);                                        \
+    }                                                                          \
+                                                                               \
+    iterator operator--() {                                                    \
+        index op_minus##op_minus;                                              \
+        return iterator(origin, index);                                        \
+    }                                                                          \
+                                                                               \
+    iterator operator--() const {                                              \
+        index op_minus##op_minus;                                              \
+        return iterator(origin, index);                                        \
+    }                                                                          \
+                                                                               \
+    iterator operator+(difference_type i) {                                    \
+        return iterator(origin, index op_plus i);                              \
+    }                                                                          \
+                                                                               \
+    const iterator operator+(difference_type i) const {                        \
+        return iterator(origin, index op_plus i);                              \
+    }                                                                          \
+                                                                               \
+    iterator operator-(difference_type i) {                                    \
+        return iterator(origin, index op_minus i);                             \
+    }                                                                          \
+                                                                               \
+    const iterator operator-(difference_type i) const {                        \
+        return iterator(origin, index op_minus i);                             \
+    }                                                                          \
+                                                                               \
+    iterator & operator+=(difference_type i) {                                 \
+        index op_plus## = i;                                                   \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    const iterator & operator+=(difference_type i) const {                     \
+        index op_plus## = i;                                                   \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    iterator & operator-=(difference_type i) {                                 \
+        index op_minus## = i;                                                  \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    const iterator & operator-=(difference_type i) const {                     \
+        index op_minus## = i;                                                  \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    iterator & operator+=(const iterator_base & other) {                       \
+        index op_plus## = other.get_index();                                   \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    const iterator & operator+=(const iterator_base & other) const {           \
+        index op_plus## = other.get_index();                                   \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    iterator & operator-=(const iterator_base & other) {                       \
+        index op_minus## = other.get_index();                                  \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    const iterator & operator-=(const iterator_base & other) const {           \
+        index op_minus## = other.get_index();                                  \
+        return *this;                                                          \
+    }                                                                          \
+                                                                               \
+    reference operator*() {                                                    \
+        return origin index_operator;                                          \
+    }                                                                          \
+                                                                               \
+    reference operator*() const {                                              \
+        return origin index_operator;                                          \
+    }                                                                          \
+                                                                               \
+    pointer operator->() {                                                     \
+        return &origin index_operator;                                         \
+    }                                                                          \
+                                                                               \
+    pointer operator->() const {                                               \
+        return &origin index_operator;                                         \
+    }                                                                          \
+                                                                               \
+    const void * get_origin() const override {                                 \
+        return origin;                                                         \
+    }                                                                          \
+                                                                               \
+    difference_type get_index_as_non_const() const override {                  \
+        return index;                                                          \
+    }                                                                          \
+                                                                               \
+    const difference_type get_index() const override {                         \
+        return index;                                                          \
+    }                                                                          \
+    difference_type op_plus_(const difference_type & other) const override {   \
+        return index op_plus other;                                            \
+    }                                                                          \
+    difference_type op_minus_(const difference_type & other) const override {  \
+        return index op_minus other;                                           \
+    }
+
+#define INDEXED_ITERATOR_DEFINE(                                               \
+    template_definition, template_usage, ORIGIN_TYPE, VALUE_TYPE, iterator,    \
+    iterator_base, op_plus, op_minus, index_operator)                          \
+    template template_definition struct iterator : public iterator_base {      \
+                                                                               \
+            using iterator_category = std::random_access_iterator_tag;         \
+            using value_type = VALUE_TYPE;                                     \
+            using pointer = VALUE_TYPE *;                                      \
+            using reference = VALUE_TYPE &;                                    \
+                                                                               \
+            ORIGIN_TYPE * origin = nullptr;                                    \
+            mutable difference_type index = 0;                                 \
+                                                                               \
+            iterator() = default;                                              \
+            iterator(ORIGIN_TYPE * origin, difference_type index) :            \
+                origin(origin), index(index) {}                                \
+            iterator(const ORIGIN_TYPE & origin, difference_type index) :      \
+                origin(&origin), index(index) {}                               \
+            iterator(const iterator_base & o) :                                \
+                origin(static_cast<ORIGIN_TYPE *>(o.get_origin())),            \
+                index(o.get_index()) {}                                        \
+                                                                               \
+            INDEXED_ITERATOR_OPS(                                              \
+                INDEXED_ITERATOR_EMBED_COMMAS(iterator<template_usage>),       \
+                op_plus, op_minus, index_operator)                             \
+                                                                               \
+            iterator * clone() const override {                                \
+                return new iterator(*this);                                    \
+            }                                                                  \
+                                                                               \
+            ::std::ostream & to_stream(::std::ostream & os) const override {   \
+                return os << "{ " << #iterator << " index = " << index         \
+                          << ", value = " << origin index_operator << " }";    \
+            }                                                                  \
+    };
+
+// allows begin/end sementics for [] operator
+namespace IndexedIterator {
+
+    struct iterator_base {
+            using difference_type = std::size_t;
+            virtual const void * get_origin() const = 0;
+            virtual const difference_type get_index() const = 0;
+            virtual difference_type get_index_as_non_const() const = 0;
+            virtual difference_type
+            op_plus_(const difference_type & other) const = 0;
+            virtual difference_type
+            op_minus_(const difference_type & other) const = 0;
+            virtual iterator_base * clone() const = 0;
+            virtual ::std::ostream & to_stream(::std::ostream & os) const = 0;
+            difference_type operator+(const iterator_base & other) {
+                return op_plus_(other.get_index());
+            }
+            difference_type operator+(const iterator_base & other) const {
+                return op_plus_(other.get_index());
+            }
+            difference_type operator-(const iterator_base & other) {
+                return op_minus_(other.get_index());
+            }
+            difference_type operator-(const iterator_base & other) const {
+                return op_minus_(other.get_index());
+            }
+            const bool operator<(const iterator_base & other) const {
+                return get_origin() == other.get_origin()
+                       && get_index() < other.get_index();
+            }
+            const bool operator<=(const iterator_base & other) const {
+                return get_origin() == other.get_origin()
+                       && get_index() <= other.get_index();
+            }
+            const bool operator==(const iterator_base & other) const {
+                return get_origin() == other.get_origin()
+                       && get_index() == other.get_index();
+            }
+            const bool operator!=(const iterator_base & other) const {
+                return !(*this == other);
+            }
+            const bool operator>(const iterator_base & other) const {
+                return get_origin() == other.get_origin()
+                       && get_index() > other.get_index();
+            }
+            const bool operator>=(const iterator_base & other) const {
+                return get_origin() == other.get_origin()
+                       && get_index() >= other.get_index();
+            }
+
+            // delete called on 'IndexedIterator::iterator_base' that is
+            // abstract but has non-virtual destructor
+            // [-Wdelete-abstract-non-virtual-dtor]
+            virtual ~iterator_base() {}
+    };
+
+    ::std::ostream & operator<<(::std::ostream & os,
+                                const IndexedIterator::iterator_base & item);
+
+    struct forward_iterator_base : public iterator_base {};
+    struct reverse_iterator_base : public iterator_base {};
+
+    // INDEXED_ITERATOR_DEFINE(
+    //     INDEXED_ITERATOR_EMBED_COMMAS(<typename T, typename V>),
+    //     INDEXED_ITERATOR_EMBED_COMMAS(T, V), T, V,
+    //     iterator, forward_iterator_base, +, -, ->operator[](index)
+    // )
+
+    // INDEXED_ITERATOR_DEFINE(
+    //     INDEXED_ITERATOR_EMBED_COMMAS(<typename T, typename V>),
+    //     INDEXED_ITERATOR_EMBED_COMMAS(T, V), T, V,
+    //     reverse_iterator, reverse_iterator_base, -, +, ->operator[](index)
+    // )
+
+    // INDEXED_ITERATOR_DEFINE(
+    //     INDEXED_ITERATOR_EMBED_COMMAS(<typename V>),
+    //     V, V, V,
+    //     ptr_iterator, forward_iterator_base, +, -, [index]
+    // )
+
+    // INDEXED_ITERATOR_DEFINE(
+    //     INDEXED_ITERATOR_EMBED_COMMAS(<typename V>),
+    //     V, V, V,
+    //     reverse_ptr_iterator, reverse_iterator_base, -, +, [index]
+    // )
+
+    template <typename T, typename V>
+    struct iterator : public forward_iterator_base {
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = V;
+            using pointer = V *;
+            using reference = V &;
+            T * origin = nullptr;
+            mutable difference_type index = 0;
+            iterator() = default;
+            iterator(T * origin, difference_type index) :
+                origin(origin), index(index) {}
+            iterator(const T & origin, difference_type index) :
+                origin(&origin), index(index) {}
+            iterator(const forward_iterator_base & o) :
+                origin(static_cast<T *>(o.get_origin())), index(o.get_index()) {
+            }
+            iterator<T, V> operator++(int) {
+                iterator<T, V> old(origin, index);
+                index++;
+                return old;
+            }
+            iterator<T, V> operator++(int) const {
+                iterator<T, V> old(origin, index);
+                index++;
+                return old;
+            }
+            iterator<T, V> operator--(int) {
+                iterator<T, V> old(origin, index);
+                index--;
+                return old;
+            }
+            iterator<T, V> operator--(int) const {
+                iterator<T, V> old(origin, index);
+                index--;
+                return old;
+            }
+            iterator<T, V> operator++() {
+                index++;
+                return iterator<T, V>(origin, index);
+            }
+            iterator<T, V> operator++() const {
+                index++;
+                return iterator<T, V>(origin, index);
+            }
+            iterator<T, V> operator--() {
+                index--;
+                return iterator<T, V>(origin, index);
+            }
+            iterator<T, V> operator--() const {
+                index--;
+                return iterator<T, V>(origin, index);
+            }
+            iterator<T, V> operator+(difference_type i) {
+                return iterator<T, V>(origin, index + i);
+            }
+            const iterator<T, V> operator+(difference_type i) const {
+                return iterator<T, V>(origin, index + i);
+            }
+            iterator<T, V> operator-(difference_type i) {
+                return iterator<T, V>(origin, index - i);
+            }
+            const iterator<T, V> operator-(difference_type i) const {
+                return iterator<T, V>(origin, index - i);
+            }
+            iterator<T, V> & operator+=(difference_type i) {
+                index += i;
+                return *this;
+            }
+            const iterator<T, V> & operator+=(difference_type i) const {
+                index += i;
+                return *this;
+            }
+            iterator<T, V> & operator-=(difference_type i) {
+                index -= i;
+                return *this;
+            }
+            const iterator<T, V> & operator-=(difference_type i) const {
+                index -= i;
+                return *this;
+            }
+            iterator<T, V> & operator+=(const iterator_base & other) {
+                index += other.get_index();
+                return *this;
+            }
+            const iterator<T, V> &
+            operator+=(const iterator_base & other) const {
+                index += other.get_index();
+                return *this;
+            }
+            iterator<T, V> & operator-=(const iterator_base & other) {
+                index -= other.get_index();
+                return *this;
+            }
+            const iterator<T, V> &
+            operator-=(const iterator_base & other) const {
+                index -= other.get_index();
+                return *this;
+            }
+            reference operator*() {
+                return origin->operator[](index);
+            }
+            reference operator*() const {
+                return origin->operator[](index);
+            }
+            pointer operator->() {
+                return &origin->operator[](index);
+            }
+            pointer operator->() const {
+                return &origin->operator[](index);
+            }
+            const void * get_origin() const override {
+                return origin;
+            }
+            difference_type get_index_as_non_const() const override {
+                return index;
+            }
+            const difference_type get_index() const override {
+                return index;
+            }
+            difference_type
+            op_plus_(const difference_type & other) const override {
+                return index + other;
+            }
+            difference_type
+            op_minus_(const difference_type & other) const override {
+                return index - other;
+            }
+            iterator * clone() const override {
+                return new iterator(*this);
+            }
+            ::std::ostream & to_stream(::std::ostream & os) const override {
+                return os << "{ "
+                          << "iterator"
+                          << " index = " << index
+                          << ", value = " << origin->operator[](index) << " }";
+            }
+    };
+
+    template <typename T, typename V>
+    struct reverse_iterator : public reverse_iterator_base {
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = V;
+            using pointer = V *;
+            using reference = V &;
+            T * origin = nullptr;
+            mutable difference_type index = 0;
+            reverse_iterator() = default;
+            reverse_iterator(T * origin, difference_type index) :
+                origin(origin), index(index) {}
+            reverse_iterator(const T & origin, difference_type index) :
+                origin(&origin), index(index) {}
+            reverse_iterator(const reverse_iterator_base & o) :
+                origin(static_cast<T *>(o.get_origin())), index(o.get_index()) {
+            }
+            reverse_iterator<T, V> operator++(int) {
+                reverse_iterator<T, V> old(origin, index);
+                index--;
+                return old;
+            }
+            reverse_iterator<T, V> operator++(int) const {
+                reverse_iterator<T, V> old(origin, index);
+                index--;
+                return old;
+            }
+            reverse_iterator<T, V> operator--(int) {
+                reverse_iterator<T, V> old(origin, index);
+                index++;
+                return old;
+            }
+            reverse_iterator<T, V> operator--(int) const {
+                reverse_iterator<T, V> old(origin, index);
+                index++;
+                return old;
+            }
+            reverse_iterator<T, V> operator++() {
+                index--;
+                return reverse_iterator<T, V>(origin, index);
+            }
+            reverse_iterator<T, V> operator++() const {
+                index--;
+                return reverse_iterator<T, V>(origin, index);
+            }
+            reverse_iterator<T, V> operator--() {
+                index++;
+                return reverse_iterator<T, V>(origin, index);
+            }
+            reverse_iterator<T, V> operator--() const {
+                index++;
+                return reverse_iterator<T, V>(origin, index);
+            }
+            reverse_iterator<T, V> operator+(difference_type i) {
+                return reverse_iterator<T, V>(origin, index - i);
+            }
+            const reverse_iterator<T, V> operator+(difference_type i) const {
+                return reverse_iterator<T, V>(origin, index - i);
+            }
+            reverse_iterator<T, V> operator-(difference_type i) {
+                return reverse_iterator<T, V>(origin, index + i);
+            }
+            const reverse_iterator<T, V> operator-(difference_type i) const {
+                return reverse_iterator<T, V>(origin, index + i);
+            }
+            reverse_iterator<T, V> & operator+=(difference_type i) {
+                index -= i;
+                return *this;
+            }
+            const reverse_iterator<T, V> & operator+=(difference_type i) const {
+                index -= i;
+                return *this;
+            }
+            reverse_iterator<T, V> & operator-=(difference_type i) {
+                index += i;
+                return *this;
+            }
+            const reverse_iterator<T, V> & operator-=(difference_type i) const {
+                index += i;
+                return *this;
+            }
+            reverse_iterator<T, V> & operator+=(const iterator_base & other) {
+                index -= other.get_index();
+                return *this;
+            }
+            const reverse_iterator<T, V> &
+            operator+=(const iterator_base & other) const {
+                index -= other.get_index();
+                return *this;
+            }
+            reverse_iterator<T, V> & operator-=(const iterator_base & other) {
+                index += other.get_index();
+                return *this;
+            }
+            const reverse_iterator<T, V> &
+            operator-=(const iterator_base & other) const {
+                index += other.get_index();
+                return *this;
+            }
+            reference operator*() {
+                return origin->operator[](index);
+            }
+            reference operator*() const {
+                return origin->operator[](index);
+            }
+            pointer operator->() {
+                return &origin->operator[](index);
+            }
+            pointer operator->() const {
+                return &origin->operator[](index);
+            }
+            const void * get_origin() const override {
+                return origin;
+            }
+            difference_type get_index_as_non_const() const override {
+                return index;
+            }
+            const difference_type get_index() const override {
+                return index;
+            }
+            difference_type
+            op_plus_(const difference_type & other) const override {
+                return index - other;
+            }
+            difference_type
+            op_minus_(const difference_type & other) const override {
+                return index + other;
+            }
+            reverse_iterator * clone() const override {
+                return new reverse_iterator(*this);
+            }
+            ::std::ostream & to_stream(::std::ostream & os) const override {
+                return os << "{ "
+                          << "reverse_iterator"
+                          << " index = " << index
+                          << ", value = " << origin->operator[](index) << " }";
+            }
+    };
+
+    template <typename V>
+    struct ptr_iterator : public forward_iterator_base {
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = V;
+            using pointer = V *;
+            using reference = V &;
+            V * origin = nullptr;
+            mutable difference_type index = 0;
+            ptr_iterator() = default;
+            ptr_iterator(V * origin, difference_type index) :
+                origin(origin), index(index) {}
+            ptr_iterator(const V & origin, difference_type index) :
+                origin(&origin), index(index) {}
+            ptr_iterator(const forward_iterator_base & o) :
+                origin(static_cast<V *>(o.get_origin())), index(o.get_index()) {
+            }
+            ptr_iterator<V> operator++(int) {
+                ptr_iterator<V> old(origin, index);
+                index++;
+                return old;
+            }
+            ptr_iterator<V> operator++(int) const {
+                ptr_iterator<V> old(origin, index);
+                index++;
+                return old;
+            }
+            ptr_iterator<V> operator--(int) {
+                ptr_iterator<V> old(origin, index);
+                index--;
+                return old;
+            }
+            ptr_iterator<V> operator--(int) const {
+                ptr_iterator<V> old(origin, index);
+                index--;
+                return old;
+            }
+            ptr_iterator<V> operator++() {
+                index++;
+                return ptr_iterator<V>(origin, index);
+            }
+            ptr_iterator<V> operator++() const {
+                index++;
+                return ptr_iterator<V>(origin, index);
+            }
+            ptr_iterator<V> operator--() {
+                index--;
+                return ptr_iterator<V>(origin, index);
+            }
+            ptr_iterator<V> operator--() const {
+                index--;
+                return ptr_iterator<V>(origin, index);
+            }
+            ptr_iterator<V> operator+(difference_type i) {
+                return ptr_iterator<V>(origin, index + i);
+            }
+            const ptr_iterator<V> operator+(difference_type i) const {
+                return ptr_iterator<V>(origin, index + i);
+            }
+            ptr_iterator<V> operator-(difference_type i) {
+                return ptr_iterator<V>(origin, index - i);
+            }
+            const ptr_iterator<V> operator-(difference_type i) const {
+                return ptr_iterator<V>(origin, index - i);
+            }
+            ptr_iterator<V> & operator+=(difference_type i) {
+                index += i;
+                return *this;
+            }
+            const ptr_iterator<V> & operator+=(difference_type i) const {
+                index += i;
+                return *this;
+            }
+            ptr_iterator<V> & operator-=(difference_type i) {
+                index -= i;
+                return *this;
+            }
+            const ptr_iterator<V> & operator-=(difference_type i) const {
+                index -= i;
+                return *this;
+            }
+            ptr_iterator<V> & operator+=(const iterator_base & other) {
+                index += other.get_index();
+                return *this;
+            }
+            const ptr_iterator<V> &
+            operator+=(const iterator_base & other) const {
+                index += other.get_index();
+                return *this;
+            }
+            ptr_iterator<V> & operator-=(const iterator_base & other) {
+                index -= other.get_index();
+                return *this;
+            }
+            const ptr_iterator<V> &
+            operator-=(const iterator_base & other) const {
+                index -= other.get_index();
+                return *this;
+            }
+            reference operator*() {
+                return origin[index];
+            }
+            reference operator*() const {
+                return origin[index];
+            }
+            pointer operator->() {
+                return &origin[index];
+            }
+            pointer operator->() const {
+                return &origin[index];
+            }
+            const void * get_origin() const override {
+                return origin;
+            }
+            difference_type get_index_as_non_const() const override {
+                return index;
+            }
+            const difference_type get_index() const override {
+                return index;
+            }
+            difference_type
+            op_plus_(const difference_type & other) const override {
+                return index + other;
+            }
+            difference_type
+            op_minus_(const difference_type & other) const override {
+                return index - other;
+            }
+            ptr_iterator * clone() const override {
+                return new ptr_iterator(*this);
+            }
+            ::std::ostream & to_stream(::std::ostream & os) const override {
+                return os << "{ "
+                          << "ptr_iterator"
+                          << " index = " << index
+                          << ", value = " << origin[index] << " }";
+            }
+    };
+
+    template <typename V>
+    struct reverse_ptr_iterator : public reverse_iterator_base {
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = V;
+            using pointer = V *;
+            using reference = V &;
+            V * origin = nullptr;
+            mutable difference_type index = 0;
+            reverse_ptr_iterator() = default;
+            reverse_ptr_iterator(V * origin, difference_type index) :
+                origin(origin), index(index) {}
+            reverse_ptr_iterator(const V & origin, difference_type index) :
+                origin(&origin), index(index) {}
+            reverse_ptr_iterator(const reverse_iterator_base & o) :
+                origin(static_cast<V *>(o.get_origin())), index(o.get_index()) {
+            }
+            reverse_ptr_iterator<V> operator++(int) {
+                reverse_ptr_iterator<V> old(origin, index);
+                index--;
+                return old;
+            }
+            reverse_ptr_iterator<V> operator++(int) const {
+                reverse_ptr_iterator<V> old(origin, index);
+                index--;
+                return old;
+            }
+            reverse_ptr_iterator<V> operator--(int) {
+                reverse_ptr_iterator<V> old(origin, index);
+                index++;
+                return old;
+            }
+            reverse_ptr_iterator<V> operator--(int) const {
+                reverse_ptr_iterator<V> old(origin, index);
+                index++;
+                return old;
+            }
+            reverse_ptr_iterator<V> operator++() {
+                index--;
+                return reverse_ptr_iterator<V>(origin, index);
+            }
+            reverse_ptr_iterator<V> operator++() const {
+                index--;
+                return reverse_ptr_iterator<V>(origin, index);
+            }
+            reverse_ptr_iterator<V> operator--() {
+                index++;
+                return reverse_ptr_iterator<V>(origin, index);
+            }
+            reverse_ptr_iterator<V> operator--() const {
+                index++;
+                return reverse_ptr_iterator<V>(origin, index);
+            }
+            reverse_ptr_iterator<V> operator+(difference_type i) {
+                return reverse_ptr_iterator<V>(origin, index - i);
+            }
+            const reverse_ptr_iterator<V> operator+(difference_type i) const {
+                return reverse_ptr_iterator<V>(origin, index - i);
+            }
+            reverse_ptr_iterator<V> operator-(difference_type i) {
+                return reverse_ptr_iterator<V>(origin, index + i);
+            }
+            const reverse_ptr_iterator<V> operator-(difference_type i) const {
+                return reverse_ptr_iterator<V>(origin, index + i);
+            }
+            reverse_ptr_iterator<V> & operator+=(difference_type i) {
+                index -= i;
+                return *this;
+            }
+            const reverse_ptr_iterator<V> &
+            operator+=(difference_type i) const {
+                index -= i;
+                return *this;
+            }
+            reverse_ptr_iterator<V> & operator-=(difference_type i) {
+                index += i;
+                return *this;
+            }
+            const reverse_ptr_iterator<V> &
+            operator-=(difference_type i) const {
+                index += i;
+                return *this;
+            }
+            reverse_ptr_iterator<V> & operator+=(const iterator_base & other) {
+                index -= other.get_index();
+                return *this;
+            }
+            const reverse_ptr_iterator<V> &
+            operator+=(const iterator_base & other) const {
+                index -= other.get_index();
+                return *this;
+            }
+            reverse_ptr_iterator<V> & operator-=(const iterator_base & other) {
+                index += other.get_index();
+                return *this;
+            }
+            const reverse_ptr_iterator<V> &
+            operator-=(const iterator_base & other) const {
+                index += other.get_index();
+                return *this;
+            }
+            reference operator*() {
+                return origin[index];
+            }
+            reference operator*() const {
+                return origin[index];
+            }
+            pointer operator->() {
+                return &origin[index];
+            }
+            pointer operator->() const {
+                return &origin[index];
+            }
+            const void * get_origin() const override {
+                return origin;
+            }
+            difference_type get_index_as_non_const() const override {
+                return index;
+            }
+            const difference_type get_index() const override {
+                return index;
+            }
+            difference_type
+            op_plus_(const difference_type & other) const override {
+                return index - other;
+            }
+            difference_type
+            op_minus_(const difference_type & other) const override {
+                return index + other;
+            }
+            reverse_ptr_iterator * clone() const override {
+                return new reverse_ptr_iterator(*this);
+            }
+            ::std::ostream & to_stream(::std::ostream & os) const override {
+                return os << "{ "
+                          << "reverse_ptr_iterator"
+                          << " index = " << index
+                          << ", value = " << origin[index] << " }";
+            }
+    };
+} // namespace IndexedIterator
+
+#define INDEXED_ITERATOR_DEFINE_HASH(template_definition, template_usage,      \
+                                     iterator, HASH_FUNC)                      \
+    namespace std {                                                            \
+        template template_definition struct hash<                              \
+            INDEXED_ITERATOR_EMBED_COMMAS(iterator<template_usage>)> {         \
+                size_t operator()(const INDEXED_ITERATOR_EMBED_COMMAS(         \
+                                      iterator<template_usage>)                \
+                                  & v) const {                                 \
+                    HASH_FUNC;                                                 \
+                }                                                              \
+        };                                                                     \
+    }                                                                          \
+                                                                               \
+    namespace std {                                                            \
+        template template_definition struct hash<                              \
+            const INDEXED_ITERATOR_EMBED_COMMAS(iterator<template_usage>)> {   \
+                size_t operator()(const INDEXED_ITERATOR_EMBED_COMMAS(         \
+                                      iterator<template_usage>)                \
+                                  & v) const {                                 \
+                    HASH_FUNC;                                                 \
+                }                                                              \
+        };                                                                     \
+    }
+
+namespace std {
+    template <>
+    struct hash<IndexedIterator::iterator_base> {
+            size_t operator()(const IndexedIterator::iterator_base & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <>
+    struct hash<const IndexedIterator::iterator_base> {
+            size_t operator()(const IndexedIterator::iterator_base & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1, typename T2>
+    struct hash<IndexedIterator::iterator<T1, T2>> {
+            size_t
+            operator()(const IndexedIterator::iterator<T1, T2> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1, typename T2>
+    struct hash<const IndexedIterator::iterator<T1, T2>> {
+            size_t
+            operator()(const IndexedIterator::iterator<T1, T2> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1, typename T2>
+    struct hash<IndexedIterator::reverse_iterator<T1, T2>> {
+            size_t operator()(
+                const IndexedIterator::reverse_iterator<T1, T2> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1, typename T2>
+    struct hash<const IndexedIterator::reverse_iterator<T1, T2>> {
+            size_t operator()(
+                const IndexedIterator::reverse_iterator<T1, T2> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1>
+    struct hash<IndexedIterator::ptr_iterator<T1>> {
+            size_t
+            operator()(const IndexedIterator::ptr_iterator<T1> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1>
+    struct hash<const IndexedIterator::ptr_iterator<T1>> {
+            size_t
+            operator()(const IndexedIterator::ptr_iterator<T1> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1>
+    struct hash<IndexedIterator::reverse_ptr_iterator<T1>> {
+            size_t operator()(
+                const IndexedIterator::reverse_ptr_iterator<T1> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+namespace std {
+    template <typename T1>
+    struct hash<const IndexedIterator::reverse_ptr_iterator<T1>> {
+            size_t operator()(
+                const IndexedIterator::reverse_ptr_iterator<T1> & v) const {
+                std::size_t hashCode = 1;
+                hashCode =
+                    31 * hashCode + std::hash<const void *>()(v.get_origin());
+                hashCode =
+                    31 * hashCode
+                    + std::hash<
+                        IndexedIterator::iterator_base::difference_type>()(
+                        v.get_index_as_non_const());
+                return hashCode;
+            }
+    };
+} // namespace std
+
+#endif

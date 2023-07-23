@@ -62,7 +62,7 @@ all data entered is reversed, `123\0` -> `\0321`
 
 the base adapter `BasicStringAdapter<T>` provide the following functions
 
-```c
+```cpp
 Slice* slice(std::size_t start, std::size_t end)
 const CSlice* cslice(std::size_t start, std::size_t end)
 const CSlice* slice(std::size_t start, std::size_t end) const
@@ -75,7 +75,7 @@ a `Slice` represents a region of an `adapter`
 
 `Slice` provides
 
-```c
+```cpp
 iterator begin()
 iterator end()
 reverse_iterator rbegin()
@@ -90,7 +90,7 @@ virtual BasicStringAdapter<T> * get_origin()
 
 `CSlice` provides
 
-```c
+```cpp
 const const_iterator begin()
 const const_iterator end()
 const const_iterator cbegin()
@@ -107,7 +107,7 @@ virtual const BasicStringAdapter<T> * get_origin()
 
 a `subslice` can be created by using `auto subslice = slice->get_origin()->slice(slice->get_start(), slice->get_end());`
 
-```c
+```cpp
 iterator begin()
 const const_iterator begin() const
 const const_iterator cbegin() const
@@ -128,19 +128,19 @@ const const_reverse_iterator crend() const
 
 required for `for loop` (specifically `for( VALUE_HERE : ADAPTER_HERE )`) capabilities
 
-```c
+```cpp
 virtual T & get_item_at_index(const std::size_t index)
 virtual const T & get_item_at_index(const std::size_t index) const
 ```
 called by `operator[] (const std::size_t index)`
 
-```c
+```cpp
 T & operator[] (const std::size_t index)
 const T & operator[] (const std::size_t index) const
 ```
 your basic array index operator, `arr[5] = value`
 
-```c
+```cpp
 virtual Shared<T> data()
 virtual const CShared<T> data() const
 ```
@@ -148,44 +148,47 @@ returns a `contigous array` of data
 
 this must never return `nullptr`, `NULL`, an `address of 0x0`, or an `integer zero ( return 0; )`
 
-this returns a managed `Shared` object, functions include `T * ptr()`, `std::size_t length()`, and `std::size_t lengthInBytes()`
+this returns a managed `Shared` object, functions include `T * ptr() const`, `const std::size_t length() const`, and `const std::size_t lengthInBytes() const`
 
 `Shared` is a wrapper for `std::shared_ptr` and contains additional information such as the length of the pointer array
 
 `CShared` is a `const` version of `Shared`
 
-```c
+this returns a managed `CShared` object, functions include `const T * ptr() const`, `const std::size_t length() const`, and `const std::size_t lengthInBytes() const`
+
+
+```cpp
 virtual std::vector<T>* data_as_vector()
 virtual const std::vector<T>* data_as_vector() const
 ```
 returns the data as a `std::vector`
-```c
+```cpp
 virtual const std::size_t length() const
 ```
 returns the length of the data, excluding the `EOF` marker (the `get_end_of_file()` function)
 
-```c
+```cpp
 virtual const std::size_t line_count() const
 ```
 returns the number of lines contained in the data, using the `get_new_line()` function
 
-```c
+```cpp
 virtual void resize(const std::size_t capacity)
 ```
 resizes the adapter to the specified `capacity`
 
-```c
+```cpp
 const std::size_t size() const
 ```
 returns `length()`
 
-```c
+```cpp
 const bool operator == (const BasicStringAdapter<T> & other) const
 const bool operator != (const BasicStringAdapter<T> & other) const
 ```
 compares the contents of one `adapter` with the contents of another `adapter`
 
-```c
+```cpp
 virtual Shared<T> c_str_()
 virtual const CShared<T> c_str_() const
 
@@ -206,12 +209,12 @@ thus should be a one way `Shared<T> -> Shared<char>` conversion for each element
 
 this allows intermediate conversion of the returned `Shared<T>` required for a string which `data()` might not consider, in the case of `ForwardListAdapter` it flips the string so the EOF is at the end instead of the start, `\0ih` -> `hi\0`
 
-```c
+```cpp
 void to_string() const
 ```
 prints this object to `std::cout`, intended for `<< base << derived << more_derived` and so on
 
-```c
+```cpp
 const int strcmp(const BasicStringAdapter<T> & other) const
 const int strcmp(const char * other) const
 const int strcmp(const T * other, const std::size_t len) const
@@ -222,21 +225,21 @@ for a `ranged for loop` is used for direct comparison of elements
 
 `strcmp(const char * other)` should be reserved for when `T` is `char`
 
-```c
+```cpp
 virtual void append_(const BasicStringAdapter<T> & what)
 ```
 appends the contents of the specified adapter `what` to the end of `this` adapter
 
 this calls `insert_` with a `pos` of `-1`
 
-```c
+```cpp
 virtual void insert_(const BasicStringAdapter<T> & what, const std::size_t pos)
 ```
 inserts the contents of the specified adapter `what` to the specified `pos` of `this` adapter
 
 `pos` is bound to the start and end of the adapter
 
-```c
+```cpp
 virtual void replace_(const BasicStringAdapter<T> & what, const std::size_t pos, const std::size_t length)
 ```
 replaces the contents of `this` adapter, at the specified position `pos`, with the specified length `length`, with the contents of the specified adapter `what`
@@ -244,7 +247,7 @@ replaces the contents of `this` adapter, at the specified position `pos`, with t
 `pos` is bound to the start and end of the adapter
 `length` is bound to the end of the adapter in accordance to the `pos`
 
-```c
+```cpp
 virtual void erase_(const std::size_t pos, const std::size_t length)
 ```
 erases the contents of `this` adapter, at the specified position `pos`, with the specified length `length`
@@ -252,7 +255,7 @@ erases the contents of `this` adapter, at the specified position `pos`, with the
 `pos` is bound to the start and end of the adapter
 `length` is bound to the end of the adapter in accordance to the `pos`
 
-```c
+```cpp
 const std::size_t clamp_pos(const std::size_t pos) const
 const std::size_t clamp_pos(const std::size_t length, const std::size_t pos) const
 const std::size_t clamp_length(const std::size_t clamped_pos, const std::size_t len) const
@@ -262,7 +265,7 @@ clamps the `pos` and `len` based on the specified `length`
 
 `length` is typically the result of `size()` or `length()`
 
-```c
+```cpp
 virtual const T get_new_line() const
 ```
 obtains the `new line` element, for `char` this is typically `\n`
@@ -273,11 +276,21 @@ the 4 adapters provide everything that `BasicStringAdapter<T>` provides above (`
 
 with the following additional functions
 
-```c
-void init(const T * ptr)
-void init(const T * ptr, std::size_t length)
+```cpp
+NAME(const T & new_line, const T & eof)
+NAME(const T* ptr, const T & new_line, const T & eof)
+NAME(const CShared<T> & ptr, const T & new_line, const T & eof)
+NAME(const T* ptr, const std::size_t length, const T & new_line, const T & eof)
+NAME(const CShared<T> & ptr, const std::size_t length, const T & new_line, const T & eof)
+NAME(const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+NAME(const T* ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+NAME(const CShared<T> & ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+NAME(const T* ptr, const std::size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+NAME(const CShared<T> & ptr, const std::size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+void init(const T* ptr, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
+void init(const T* ptr, const std::size_t length, const std::shared_ptr<const T> & new_line, const std::shared_ptr<const T> & eof)
 ```
-```c
+```cpp
     template <typename T>
     struct ListAdapter : public BasicStringAdapter<T> {
         mutable std::list<T> list;
@@ -293,21 +306,21 @@ void init(const T * ptr, std::size_t length)
     };
 ```
 
-```c
+```cpp
 std::vector<DERIVED> split(const T & splitter) const
 ```
 splits an `adapter` into the same `adapter` delimited by the specified `splitter`
 
 `abcd<SPLITTER>efg` -> `[ "abcd", "efg" ]`
 
-```c
+```cpp
 std::vector<DERIVED> lines() const
 ```
 splits an `adapter` into the same `adapter` delimited by the `new line` item, returned by `get_new_line()`
 
 `abcd\nefg` -> `[ "abcd", "efg" ]`
 
-```c
+```cpp
 std::vector<DERIVED> lines() const
 ```
 splits an `adapter` into the same `adapter` delimited by the `new line` item, returned by `get_new_line()`
@@ -320,12 +333,12 @@ all `Char Adapters` provide everything `the 4 adapters` provides above (`basic f
 
 with the following additional functions
 
-```c
+```cpp
 const char_t get_end_of_file() const
 ```
 returns the `EOF` marker, for `char` this is the `null terminator` which is `\0`
 
-```c
+```cpp
 void append(const std::string & s)
 void append(const char_t * s)
 void append(const char_t * s, std::size_t len)
@@ -333,15 +346,15 @@ void append(const char_t & c)
 ```
 calls `append_`
 
-```c
-void insert(const std::size_t pos, const std::size_t len, const std::string & s)
-void insert(const std::size_t pos, const std::size_t len, const char * s)
-void insert(const std::size_t pos, const std::size_t len, const char * s, const std::size_t len2)
-void insert(const std::size_t pos, const std::size_t len, const char & s)
+```cpp
+void insert(const std::size_t pos, const std::string & s)
+void insert(const std::size_t pos, const char * s)
+void insert(const std::size_t pos, const char * s, const std::size_t len2)
+void insert(const std::size_t pos, const char & s)
 ```
 calls `insert_`
 
-```c
+```cpp
 void replace(const std::size_t pos, const std::size_t len, const std::string & s)
 void replace(const std::size_t pos, const std::size_t len, const char * s)
 void replace(const std::size_t pos, const std::size_t len, const char * s, const std::size_t len2)
@@ -349,7 +362,7 @@ void replace(const std::size_t pos, const std::size_t len, const char & s)
 ```
 calls `replace_`
 
-```c
+```cpp
 void erase(const std::size_t pos, const std::size_t len)
 ```
 calls `erase_`

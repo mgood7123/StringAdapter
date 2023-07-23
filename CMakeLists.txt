@@ -6,15 +6,18 @@ include_directories(include)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_COMPILER clang++)
+
 
 if(NOT COMMAND testBuilder_build)
     add_subdirectory(testBuilder)
     testBuilder_set_current_working_directory_to_default_binary_directory()
 endif()
 
+add_subdirectory(LibObj)
+
 testBuilder_add_include(StringAdapter include)
-testBuilder_add_source(StringAdapter src/empty.cpp)
+testBuilder_add_source(StringAdapter src/indexed_iterator.cpp)
+testBuilder_add_library(StringAdapter LibObj)
 testBuilder_build_shared_library(StringAdapter)
 
 if (NOT TARGET gtest AND NOT TARGET gtest_main)

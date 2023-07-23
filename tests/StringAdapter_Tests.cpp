@@ -1,14 +1,29 @@
 #include <gtest/gtest.h>
 
-
 #include <string_adapter.h>
 
 using namespace StringAdapter;
 
-#define data_is_null(t) { auto data_ = t.data(); ASSERT_EQ(data_.ptr(), nullptr); }
-#define data_is_not_null(t) { auto data_ = t.data(); ASSERT_NE(data_.ptr(), nullptr); }
-#define data_is_val(t, i_, value_) { auto data_ = t.data(); ASSERT_EQ(data_.ptr()[i_], value_); }
-#define data_is_not_val(t, i_, value_) { auto data_ = t.data(); ASSERT_NE(data_.ptr()[i_], value_); }
+#define data_is_null(t)                                                        \
+    {                                                                          \
+        auto data_ = t.data();                                                 \
+        ASSERT_EQ(data_.ptr(), nullptr);                                       \
+    }
+#define data_is_not_null(t)                                                    \
+    {                                                                          \
+        auto data_ = t.data();                                                 \
+        ASSERT_NE(data_.ptr(), nullptr);                                       \
+    }
+#define data_is_val(t, i_, value_)                                             \
+    {                                                                          \
+        auto data_ = t.data();                                                 \
+        ASSERT_EQ(data_.ptr()[i_], value_);                                    \
+    }
+#define data_is_not_val(t, i_, value_)                                         \
+    {                                                                          \
+        auto data_ = t.data();                                                 \
+        ASSERT_NE(data_.ptr()[i_], value_);                                    \
+    }
 
 TEST(ResizingVectorAdapter_Core, initialization_data_checking) {
     CharResizingVectorAdapter a;
@@ -97,520 +112,558 @@ TEST(ForwardListAdapter_Core, initialization2_data_checking) {
     data_is_val(a, 5, 'h');
 }
 
-#define TEST_ITERATOR(A, B, C, D, IT_NAME, IT_BEGIN, IT_END, SLICE_NAME, SLICE_FUNC) \
-TEST(ResizingVectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 1"); \
-    A a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 2"); \
-    B a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 3"); \
-    C a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 4"); \
-    D a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 5"); \
-    A a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 6"); \
-    B a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 7"); \
-    C a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 8"); \
-    D a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '5'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 9"); \
-    A a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '5'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 10"); \
-    B a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '5'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 11"); \
-    C a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '5'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 12"); \
-    D a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '1'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 13"); \
-    A a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 14"); \
-    B a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 15"); \
-    C a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 16"); \
-    D a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 17"); \
-    A a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 18"); \
-    B a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 19"); \
-    C a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 20"); \
-    D a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '4'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '2'); \
-    delete sp; \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 21"); \
-    CharResizingVectorAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
-    delete sp; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 22"); \
-    CharVectorAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
-    delete sp; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 23"); \
-    CharListAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
-    delete sp; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 24"); \
-    CharForwardListAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '4'); \
-    delete sp; \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 25"); \
-    A a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '3'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
-    delete sp2; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 26"); \
-    B a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '3'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
-    delete sp2; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 27"); \
-    C a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '3'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
-    delete sp2; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 28"); \
-    D a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '3'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '2'); \
-    delete sp2; \
-} \
+#define TEST_ITERATOR(A, B, C, D, IT_NAME, IT_BEGIN, IT_END, SLICE_NAME,       \
+                      SLICE_FUNC)                                              \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {  \
+        puts("TEST_ID: 1");                                                    \
+        A a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {          \
+        puts("TEST_ID: 2");                                                    \
+        B a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {            \
+        puts("TEST_ID: 3");                                                    \
+        C a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {     \
+        puts("TEST_ID: 4");                                                    \
+        D a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_BEGIN) {                   \
+        puts("TEST_ID: 5");                                                    \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '1');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_BEGIN) {                           \
+        puts("TEST_ID: 6");                                                    \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '1');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_BEGIN) {                             \
+        puts("TEST_ID: 7");                                                    \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '1');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_BEGIN) {                      \
+        puts("TEST_ID: 8");                                                    \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '5');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END) {                     \
+        puts("TEST_ID: 9");                                                    \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '5');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_END) {                             \
+        puts("TEST_ID: 10");                                                   \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '5');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_END) {                               \
+        puts("TEST_ID: 11");                                                   \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '5');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END) {                        \
+        puts("TEST_ID: 12");                                                   \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '1');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END##_2) {                 \
+        puts("TEST_ID: 13");                                                   \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_END##_2) {                         \
+        puts("TEST_ID: 14");                                                   \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_END##_2) {                           \
+        puts("TEST_ID: 15");                                                   \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END##_2) {                    \
+        puts("TEST_ID: 16");                                                   \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {              \
+        puts("TEST_ID: 17");                                                   \
+        A a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                      \
+        puts("TEST_ID: 18");                                                   \
+        B a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                        \
+        puts("TEST_ID: 19");                                                   \
+        C a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                 \
+        puts("TEST_ID: 20");                                                   \
+        D a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '4');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '2');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 21");                                                   \
+        CharResizingVectorAdapter a = "12345";                                 \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '2');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core,                                                   \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 22");                                                   \
+        CharVectorAdapter a = "12345";                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '2');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core,                                                     \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 23");                                                   \
+        CharListAdapter a = "12345";                                           \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '2');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 24");                                                   \
+        CharForwardListAdapter a = "12345";                                    \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '4');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 25");                                                   \
+        A a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '3');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '4');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core,                                                   \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 26");                                                   \
+        B a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '3');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '4');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
+        puts("TEST_ID: 27");                                                   \
+        C a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '3');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '4');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 28");                                                   \
+        D a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '3');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '2');                                    \
+        delete sp2;                                                            \
+    }
 
-#define TEST_REVERSE_ITERATOR(A, B, C, D, IT_NAME, IT_BEGIN, IT_END, SLICE_NAME, SLICE_FUNC) \
-TEST(ResizingVectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 29"); \
-    A a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 30"); \
-    B a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 31"); \
-    C a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 32"); \
-    D a; \
-    ASSERT_EQ(a.IT_BEGIN(), a.IT_END()); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 33"); \
-    A a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '5'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 34"); \
-    B a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '5'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 35"); \
-    C a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '5'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 36"); \
-    D a = "12345"; \
-    ASSERT_EQ(*a.IT_BEGIN(), '1'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 37"); \
-    A a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '1'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 38"); \
-    B a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '1'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 39"); \
-    C a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '1'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 40"); \
-    D a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1), '5'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 41"); \
-    A a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(VectorAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 42"); \
-    B a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ListAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 43"); \
-    C a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END##_2) { \
-    puts("TEST_ID: 44"); \
-    D a = "12345"; \
-    ASSERT_EQ(*(a.IT_END()-1-2), '3'); \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 45"); \
-    A a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 46"); \
-    B a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 47"); \
-    C a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '2'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '4'); \
-    delete sp; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) { \
-    puts("TEST_ID: 48"); \
-    D a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(s[0], '4'); \
-    ASSERT_EQ(s[1], '3'); \
-    ASSERT_EQ(s[2], '2'); \
-    delete sp; \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 49"); \
-    CharResizingVectorAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '4'); \
-    delete sp; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 50"); \
-    CharVectorAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '4'); \
-    delete sp; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 51"); \
-    CharListAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '4'); \
-    delete sp; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) { \
-    puts("TEST_ID: 52"); \
-    CharForwardListAdapter a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 3); \
-    auto & s = *sp; \
-    ASSERT_EQ(*s.IT_BEGIN(), '2'); \
-    delete sp; \
-} \
-\
-TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 53"); \
-    A a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '2'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '2'); \
-    delete sp2; \
-} \
-\
-TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 54"); \
-    B a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '2'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '2'); \
-    delete sp2; \
-} \
-\
-TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 55"); \
-    C a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '2'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '2'); \
-    delete sp2; \
-} \
-\
-TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
-    puts("TEST_ID: 56"); \
-    D a = "12345"; \
-    auto sp = a.SLICE_FUNC(1, 2); \
-    auto & s = *sp; \
-    ASSERT_EQ(*(s.IT_END()-1), '4'); \
-    delete sp; \
-    auto sp2 = a.SLICE_FUNC(1, 3); \
-    auto & s2 = *sp2; \
-    ASSERT_EQ(*(s2.IT_END()-1), '4'); \
-    delete sp2; \
-} \
-\
-TEST(ResizingVectorAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 57"); \
-    A a = "12345"; \
-    std::cout << "a = " << a << "\n"; \
-} \
-\
-TEST(VectorAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 58"); \
-    B b = "12345"; \
-    std::cout << "b = " << b << "\n"; \
-} \
-\
-TEST(ListAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 59"); \
-    C c = "12345"; \
-    std::cout << "c = " << c << "\n"; \
-} \
-\
-TEST(ForwardListAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 60"); \
-    D d = "12345"; \
-    std::cout << "d = " << d << "\n"; \
-} \
-TEST(ResizingVectorAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 61"); \
-    A a = "12345"; \
-    std::cout << "hash a = " << std::hash<A>()(a) << "\n"; \
-} \
-\
-TEST(VectorAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 62"); \
-    B b = "12345"; \
-    std::cout << "hash b = " << std::hash<B>()(b) << "\n"; \
-} \
-\
-TEST(ListAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 63"); \
-    C c = "12345"; \
-    std::cout << "hash c = " << std::hash<C>()(c) << "\n"; \
-} \
-\
-TEST(ForwardListAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
-    puts("TEST_ID: 64"); \
-    D d = "12345"; \
-    std::cout << "hash d = " << std::hash<D>()(d) << "\n"; \
-} \
+#define TEST_REVERSE_ITERATOR(A, B, C, D, IT_NAME, IT_BEGIN, IT_END,           \
+                              SLICE_NAME, SLICE_FUNC)                          \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {  \
+        puts("TEST_ID: 29");                                                   \
+        A a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {          \
+        puts("TEST_ID: 30");                                                   \
+        B a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {            \
+        puts("TEST_ID: 31");                                                   \
+        C a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_empty_##IT_BEGIN##_##IT_END) {     \
+        puts("TEST_ID: 32");                                                   \
+        D a;                                                                   \
+        ASSERT_EQ(a.IT_BEGIN(), a.IT_END());                                   \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_BEGIN) {                   \
+        puts("TEST_ID: 33");                                                   \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '5');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_BEGIN) {                           \
+        puts("TEST_ID: 34");                                                   \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '5');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_BEGIN) {                             \
+        puts("TEST_ID: 35");                                                   \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '5');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_BEGIN) {                      \
+        puts("TEST_ID: 36");                                                   \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*a.IT_BEGIN(), '1');                                         \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END) {                     \
+        puts("TEST_ID: 37");                                                   \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '1');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_END) {                             \
+        puts("TEST_ID: 38");                                                   \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '1');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_END) {                               \
+        puts("TEST_ID: 39");                                                   \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '1');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END) {                        \
+        puts("TEST_ID: 40");                                                   \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1), '5');                                     \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, IT_NAME##_##IT_END##_2) {                 \
+        puts("TEST_ID: 41");                                                   \
+        A a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, IT_NAME##_##IT_END##_2) {                         \
+        puts("TEST_ID: 42");                                                   \
+        B a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, IT_NAME##_##IT_END##_2) {                           \
+        puts("TEST_ID: 43");                                                   \
+        C a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, IT_NAME##_##IT_END##_2) {                    \
+        puts("TEST_ID: 44");                                                   \
+        D a = "12345";                                                         \
+        ASSERT_EQ(*(a.IT_END() - 1 - 2), '3');                                 \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {              \
+        puts("TEST_ID: 45");                                                   \
+        A a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                      \
+        puts("TEST_ID: 46");                                                   \
+        B a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                        \
+        puts("TEST_ID: 47");                                                   \
+        C a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '2');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '4');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core, SLICE_NAME##_##SLICE_FUNC) {                 \
+        puts("TEST_ID: 48");                                                   \
+        D a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(s[0], '4');                                                  \
+        ASSERT_EQ(s[1], '3');                                                  \
+        ASSERT_EQ(s[2], '2');                                                  \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 49");                                                   \
+        CharResizingVectorAdapter a = "12345";                                 \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '4');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core,                                                   \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 50");                                                   \
+        CharVectorAdapter a = "12345";                                         \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '4');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core,                                                     \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 51");                                                   \
+        CharListAdapter a = "12345";                                           \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '4');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_BEGIN) {                 \
+        puts("TEST_ID: 52");                                                   \
+        CharForwardListAdapter a = "12345";                                    \
+        auto sp = a.SLICE_FUNC(1, 3);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*s.IT_BEGIN(), '2');                                         \
+        delete sp;                                                             \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 53");                                                   \
+        A a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '2');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '2');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core,                                                   \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 54");                                                   \
+        B a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '2');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '2');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) { \
+        puts("TEST_ID: 55");                                                   \
+        C a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '2');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '2');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         SLICE_NAME##_##SLICE_FUNC##_##IT_NAME##_##IT_END) {                   \
+        puts("TEST_ID: 56");                                                   \
+        D a = "12345";                                                         \
+        auto sp = a.SLICE_FUNC(1, 2);                                          \
+        auto & s = *sp;                                                        \
+        ASSERT_EQ(*(s.IT_END() - 1), '4');                                     \
+        delete sp;                                                             \
+        auto sp2 = a.SLICE_FUNC(1, 3);                                         \
+        auto & s2 = *sp2;                                                      \
+        ASSERT_EQ(*(s2.IT_END() - 1), '4');                                    \
+        delete sp2;                                                            \
+    }                                                                          \
+                                                                               \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {                     \
+        puts("TEST_ID: 57");                                                   \
+        A a = "12345";                                                         \
+        std::cout << "a = " << a << "\n";                                      \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) { \
+        puts("TEST_ID: 58");                                                   \
+        B b = "12345";                                                         \
+        std::cout << "b = " << b << "\n";                                      \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {   \
+        puts("TEST_ID: 59");                                                   \
+        C c = "12345";                                                         \
+        std::cout << "c = " << c << "\n";                                      \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         PRINT__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {                     \
+        puts("TEST_ID: 60");                                                   \
+        D d = "12345";                                                         \
+        std::cout << "d = " << d << "\n";                                      \
+    }                                                                          \
+    TEST(ResizingVectorAdapter_Core,                                           \
+         HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {                      \
+        puts("TEST_ID: 61");                                                   \
+        A a = "12345";                                                         \
+        std::cout << "hash a = " << std::hash<A>()(a) << "\n";                 \
+    }                                                                          \
+                                                                               \
+    TEST(VectorAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {  \
+        puts("TEST_ID: 62");                                                   \
+        B b = "12345";                                                         \
+        std::cout << "hash b = " << std::hash<B>()(b) << "\n";                 \
+    }                                                                          \
+                                                                               \
+    TEST(ListAdapter_Core, HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {    \
+        puts("TEST_ID: 63");                                                   \
+        C c = "12345";                                                         \
+        std::cout << "hash c = " << std::hash<C>()(c) << "\n";                 \
+    }                                                                          \
+                                                                               \
+    TEST(ForwardListAdapter_Core,                                              \
+         HASH__##IT_NAME##_empty_##IT_BEGIN##_##IT_END) {                      \
+        puts("TEST_ID: 64");                                                   \
+        D d = "12345";                                                         \
+        std::cout << "hash d = " << std::hash<D>()(d) << "\n";                 \
+    }
 
-TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, iterator, begin, end, slice, slice)
-TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, const_iterator, cbegin, cend, cslice, cslice)
-TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_iterator, begin, end, const_slice, slice)
-TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_iterator_2, cbegin, cend, const_cslice, cslice)
+TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter,
+              CharForwardListAdapter, iterator, begin, end, slice, slice)
+TEST_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter,
+              CharForwardListAdapter, const_iterator, cbegin, cend, cslice,
+              cslice)
+TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter,
+              const CharListAdapter, const CharForwardListAdapter,
+              const_iterator, begin, end, const_slice, slice)
+TEST_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter,
+              const CharListAdapter, const CharForwardListAdapter,
+              const_iterator_2, cbegin, cend, const_cslice, cslice)
 
-TEST_REVERSE_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, reverse_iterator, rbegin, rend, reverse_slice, slice)
-TEST_REVERSE_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter, CharListAdapter, CharForwardListAdapter, const_reverse_iterator, crbegin, crend, creverse_slice, cslice)
-TEST_REVERSE_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_reverse_iterator, rbegin, rend, const_reverse_slice, slice)
-TEST_REVERSE_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter, const CharListAdapter, const CharForwardListAdapter, const_reverse_iterator_2, crbegin, crend, const_reverse_slice, cslice)
+TEST_REVERSE_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter,
+                      CharListAdapter, CharForwardListAdapter, reverse_iterator,
+                      rbegin, rend, reverse_slice, slice)
+TEST_REVERSE_ITERATOR(CharResizingVectorAdapter, CharVectorAdapter,
+                      CharListAdapter, CharForwardListAdapter,
+                      const_reverse_iterator, crbegin, crend, creverse_slice,
+                      cslice)
+TEST_REVERSE_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter,
+                      const CharListAdapter, const CharForwardListAdapter,
+                      const_reverse_iterator, rbegin, rend, const_reverse_slice,
+                      slice)
+TEST_REVERSE_ITERATOR(const CharResizingVectorAdapter, const CharVectorAdapter,
+                      const CharListAdapter, const CharForwardListAdapter,
+                      const_reverse_iterator_2, crbegin, crend,
+                      const_reverse_slice, cslice)
 
 TEST(ResizingVectorAdapter_Core, append1) {
     CharResizingVectorAdapter a;

@@ -1,3 +1,6 @@
 [submodule "googletest"]
 	path = googletest
 	url = https://github.com/google/googletest
+[submodule "LibObj"]
+	path = LibObj
+	url = https://github.com/mgood7123/LibObj
