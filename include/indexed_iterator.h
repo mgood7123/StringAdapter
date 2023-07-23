@@ -11,6 +11,7 @@
 #include <libobj.h>
 
 #define INDEXED_ITERATOR_EMBED_COMMAS(...) __VA_ARGS__
+#define INDEXED_ITERATOR_ASSIGN(a, b, T) a = T(b.is_const() ? const_cast<typename T::O_TYPE*>(b.origin) : const_cast<typename T::O_TYPE*>(b.origin), b.index)
 
 #define INDEXED_ITERATOR_OPS(iterator, op_plus, op_minus, index_operator)      \
     iterator operator++(int) {                                                 \
@@ -158,6 +159,9 @@
                                                                                \
             mutable ORIGIN_TYPE * origin = nullptr;                            \
             mutable difference_type index = 0;                                 \
+            \
+            using iterator_base_obj::operator+; \
+            using iterator_base_obj::operator-; \
                                                                                \
             std::ostream & toStream(std::ostream & os) const override {                                          \
                 return os << "{ " << &iterator_base_obj::toStream              \
@@ -181,8 +185,6 @@
                 INDEXED_ITERATOR_EMBED_COMMAS(iterator<template_usage>),       \
                 op_plus, op_minus, index_operator)                             \
     };
-
-#define INDEXED_ITERATOR_ASSIGN(a, b, T) a = T(b.is_const() ? const_cast<typename T::O_TYPE*>(b.origin) : const_cast<typename T::O_TYPE*>(b.origin), b.index)
 
 // allows begin/end sementics for [] operator
 namespace IndexedIterator {
@@ -235,8 +237,14 @@ namespace IndexedIterator {
             }
     };
 
-    struct forward_iterator_base_obj : public iterator_base_obj {};
-    struct reverse_iterator_base_obj : public iterator_base_obj {};
+    struct forward_iterator_base_obj : public iterator_base_obj {
+            using iterator_base_obj::operator+;
+            using iterator_base_obj::operator-;
+    };
+    struct reverse_iterator_base_obj : public iterator_base_obj {
+            using iterator_base_obj::operator+;
+            using iterator_base_obj::operator-;
+    };
 
     INDEXED_ITERATOR_DEFINE(
         INDEXED_ITERATOR_EMBED_COMMAS(<typename T, typename V>),
