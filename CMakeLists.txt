@@ -41,4 +41,4 @@ endif()
 
 add_subdirectory(tests)
 
-set(StringAdapter_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
+set(STRING_ADAPTER_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)

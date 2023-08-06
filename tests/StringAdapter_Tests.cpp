@@ -735,6 +735,14 @@ TEST(ResizingVectorAdapter_Core, erase1) {
     data_is_val(a, 0, 'h');
     data_is_val(a, 1, 'o');
     data_is_val(a, 2, '\0');
+    a.erase(0, -1);
+    ASSERT_EQ(a.vector.size(), 1);
+    ASSERT_EQ(a.vector.capacity(), 1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
 }
 
 TEST(VectorAdapter_Core, erase1) {
@@ -753,6 +761,14 @@ TEST(VectorAdapter_Core, erase1) {
     data_is_val(a, 0, 'h');
     data_is_val(a, 1, 'o');
     data_is_val(a, 2, '\0');
+    a.erase(0, -1);
+    ASSERT_EQ(a.vector.size(), 1);
+    ASSERT_EQ(a.vector.capacity(), 1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
 }
 
 TEST(ListAdapter_Core, erase1) {
@@ -768,6 +784,11 @@ TEST(ListAdapter_Core, erase1) {
     data_is_val(a, 0, 'h');
     data_is_val(a, 1, 'o');
     data_is_val(a, 2, '\0');
+    a.erase(0, -1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a[0], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
 }
 
 TEST(ForwardListAdapter_Core, erase1) {
@@ -783,6 +804,11 @@ TEST(ForwardListAdapter_Core, erase1) {
     data_is_val(a, 0, '\0');
     data_is_val(a, 1, 'o');
     data_is_val(a, 2, 'h');
+    a.erase(0, -1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a[0], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
 }
 
 TEST(ResizingVectorAdapter_Core, replace1) {
@@ -927,4 +953,180 @@ TEST(ForwardListAdapter_Core, equals2) {
     CharForwardListAdapter b;
     b.append("hello");
     ASSERT_EQ(a, b);
+}
+
+TEST(resize, ResizingVectorAdapter) {
+    std::string str;
+    ASSERT_EQ(str.size(), 0);
+    ASSERT_EQ(str.length(), 0);
+    CharResizingVectorAdapter a;
+    ASSERT_EQ(a.vector.size(), 1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.size(), 0);
+    str.resize(5);
+    ASSERT_EQ(str.size(), 5);
+    ASSERT_EQ(str.length(), 5);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[5], '\0');
+    a.resize(5);
+    ASSERT_EQ(a.vector.size(), 6);
+    ASSERT_EQ(a.vector.capacity(), 6);
+    ASSERT_EQ(a.size(), 5);
+    ASSERT_EQ(a.length(), 5);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a.vector[5], '\0');
+    ASSERT_EQ(a[5], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 5, '\0');
+
+    str.resize(3);
+    ASSERT_EQ(str.size(), 3);
+    ASSERT_EQ(str.length(), 3);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[3], '\0');
+    a.resize(3);
+    ASSERT_EQ(a.vector.size(), 4);
+    ASSERT_EQ(a.vector.capacity(), 4);
+    ASSERT_EQ(a.size(), 3);
+    ASSERT_EQ(a.length(), 3);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a.vector[3], '\0');
+    ASSERT_EQ(a[3], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 3, '\0');
+
+    str.resize(0);
+    ASSERT_EQ(str.size(), 0);
+    ASSERT_EQ(str.length(), 0);
+    ASSERT_EQ(str[0], '\0');
+    a.resize(0);
+    ASSERT_EQ(a.vector.size(), 1);
+    ASSERT_EQ(a.vector.capacity(), 1);
+    ASSERT_EQ(a.size(), 0);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+}
+
+TEST(resize, VectorAdapter) {
+    std::string str;
+    ASSERT_EQ(str.size(), 0);
+    ASSERT_EQ(str.length(), 0);
+    CharVectorAdapter a;
+    ASSERT_EQ(a.vector.size(), 1);
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.size(), 0);
+    str.resize(5);
+    ASSERT_EQ(str.size(), 5);
+    ASSERT_EQ(str.length(), 5);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[5], '\0');
+    a.resize(5);
+    ASSERT_EQ(a.vector.size(), 6);
+    ASSERT_EQ(a.vector.capacity(), 6);
+    ASSERT_EQ(a.size(), 5);
+    ASSERT_EQ(a.length(), 5);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a.vector[5], '\0');
+    ASSERT_EQ(a[5], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 5, '\0');
+
+    str.resize(3);
+    ASSERT_EQ(str.size(), 3);
+    ASSERT_EQ(str.length(), 3);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[3], '\0');
+    a.resize(3);
+    ASSERT_EQ(a.vector.size(), 4);
+    ASSERT_EQ(a.vector.capacity(), 4);
+    ASSERT_EQ(a.size(), 3);
+    ASSERT_EQ(a.length(), 3);
+    ASSERT_EQ(a.vector[0], '\0');
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a.vector[3], '\0');
+    ASSERT_EQ(a[3], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 3, '\0');
+}
+
+TEST(resize, ListAdapter) {
+    std::string str;
+    ASSERT_EQ(str.size(), 0);
+    ASSERT_EQ(str.length(), 0);
+    CharListAdapter a;
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.size(), 0);
+    str.resize(5);
+    ASSERT_EQ(str.size(), 5);
+    ASSERT_EQ(str.length(), 5);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[5], '\0');
+    a.resize(5);
+    ASSERT_EQ(a.size(), 5);
+    ASSERT_EQ(a.length(), 5);
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a[5], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 5, '\0');
+
+    str.resize(3);
+    ASSERT_EQ(str.size(), 3);
+    ASSERT_EQ(str.length(), 3);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[3], '\0');
+    a.resize(3);
+    ASSERT_EQ(a.size(), 3);
+    ASSERT_EQ(a.length(), 3);
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a[3], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 3, '\0');
+}
+
+TEST(resize, ForwardListAdapter) {
+    std::string str;
+    ASSERT_EQ(str.size(), 0);
+    ASSERT_EQ(str.length(), 0);
+    CharForwardListAdapter a;
+    ASSERT_EQ(a.length(), 0);
+    ASSERT_EQ(a.size(), 0);
+    str.resize(5);
+    ASSERT_EQ(str.size(), 5);
+    ASSERT_EQ(str.length(), 5);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[5], '\0');
+    a.resize(5);
+    ASSERT_EQ(a.size(), 5);
+    ASSERT_EQ(a.length(), 5);
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a[5], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 5, '\0');
+
+    str.resize(3);
+    ASSERT_EQ(str.size(), 3);
+    ASSERT_EQ(str.length(), 3);
+    ASSERT_EQ(str[0], '\0');
+    ASSERT_EQ(str[3], '\0');
+    a.resize(3);
+    ASSERT_EQ(a.size(), 3);
+    ASSERT_EQ(a.length(), 3);
+    ASSERT_EQ(a[0], '\0');
+    ASSERT_EQ(a[3], '\0');
+    data_is_not_null(a);
+    data_is_val(a, 0, '\0');
+    data_is_val(a, 3, '\0');
 }

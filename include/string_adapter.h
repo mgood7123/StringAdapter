@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 
+#ifndef STRING_ADAPTER_FUNCTION_TYPE
+#define STRING_ADAPTER_FUNCTION_TYPE std::function
+#endif
+
 #define STRING_ADAPTER_HASHCODE_SPEC(T)                                        \
     namespace std {                                                            \
         template <>                                                            \
@@ -267,11 +271,11 @@ namespace StringAdapter {
     template <typename C>
     struct Comparable {
 
-            std::function<int(const C & a, const C & b)> c;
+            STRING_ADAPTER_FUNCTION_TYPE<int(const C & a, const C & b)> c;
 
             Comparable() = default;
 
-            Comparable(std::function<int(const C & a, const C & b)> f) {
+            Comparable(STRING_ADAPTER_FUNCTION_TYPE<int(const C & a, const C & b)> f) {
                 c = f;
             }
 
@@ -316,11 +320,11 @@ namespace StringAdapter {
     template <typename C>
     struct Hashable {
 
-            std::function<std::size_t(const C & a)> c;
+            STRING_ADAPTER_FUNCTION_TYPE<std::size_t(const C & a)> c;
 
             Hashable() = default;
 
-            Hashable(std::function<std::size_t(const C & a)> f) {
+            Hashable(STRING_ADAPTER_FUNCTION_TYPE<std::size_t(const C & a)> f) {
                 c = f;
             }
 
@@ -836,6 +840,8 @@ namespace StringAdapter {
                 return get_item_at_index(index);
             };
 
+            virtual const char index_to_char(const std::size_t index) const = 0;
+
             // must never be null
             virtual Shared<T> data() = 0;
             virtual const CShared<T> data() const = 0;
@@ -1190,13 +1196,13 @@ namespace StringAdapter {
                 this->eof = eof;
 
                 if (ptr == nullptr || length == 0) {
-                    this->len = 0;
-                    this->list = {};
+                    this->list = std::move(std::list<T>());
                     this->list.emplace_back(get_end_of_file());
+                    this->len = 0;
                     return;
                 }
 
-                this->list = {};
+                this->list = std::move(std::list<T>());
                 len = length;
                 if (length != 0) {
                     for (std::size_t s = 0; s < length; s++) {
@@ -1255,7 +1261,8 @@ namespace StringAdapter {
                     if (capacity == 0) {
                         erase_(0, len_);
                     } else {
-                        list.resize(capacity);
+                        list.resize(capacity+1);
+                        len = capacity;
                     }
                 }
             }
@@ -1300,7 +1307,8 @@ namespace StringAdapter {
                 const std::size_t l = clamp_length(len_, p, length);
 
                 if (pos == 0 && l == len_) {
-                    list = {};
+                    list = std::move(std::list<T>());
+                    list.emplace_back(get_end_of_file());
                     len = 0;
                 } else if (l != 0) {
                     list.erase(std::next(list.begin(), p),
@@ -1408,13 +1416,13 @@ namespace StringAdapter {
                 this->eof = eof;
 
                 if (ptr == nullptr || length == 0) {
-                    this->forward_list = {};
+                    this->forward_list = std::move(std::forward_list<T>());
                     this->forward_list.emplace_front(get_end_of_file());
                     this->len = 0;
                     return;
                 }
 
-                this->forward_list = {};
+                this->forward_list = std::move(std::forward_list<T>());
                 len = length;
                 if (length != 0) {
                     for (std::size_t s = 0; s < length; s++) {
@@ -1493,7 +1501,8 @@ namespace StringAdapter {
                     if (capacity == 0) {
                         erase_(0, len_);
                     } else {
-                        forward_list.resize(capacity);
+                        forward_list.resize(capacity+1);
+                        len = capacity;
                     }
                 }
             }
@@ -1540,7 +1549,8 @@ namespace StringAdapter {
                 const std::size_t l = clamp_length(len_, p, length);
 
                 if (pos == 0 && l == len_) {
-                    forward_list = {};
+                    forward_list = std::move(std::forward_list<T>());
+                    forward_list.emplace_front(get_end_of_file());
                     len = 0;
                 } else if (l != 0) {
                     auto begin = std::next(forward_list.begin(), p);
@@ -1653,7 +1663,8 @@ namespace StringAdapter {
                     if (capacity == 0) {
                         erase_(0, len_);
                     } else {
-                        vector.resize(capacity);
+                        vector.resize(capacity+1);
+                        vector.shrink_to_fit();
                     }
                 }
             }
@@ -1696,7 +1707,8 @@ namespace StringAdapter {
                 const std::size_t l = clamp_length(len_, p, length);
 
                 if (pos == 0 && l == len_) {
-                    vector = {};
+                    vector = std::move(std::vector<T>(1));
+                    vector[0] = get_end_of_file();
                 } else if (l != 0) {
                     vector.erase(vector.begin() + p, vector.begin() + l);
                 }
@@ -1722,6 +1734,10 @@ namespace StringAdapter {
                                 const std::size_t length) override {
                 BASE::erase_(pos, length);
                 vector.shrink_to_fit();
+            }
+
+            void resize(const std::size_t capacity) override {
+                BASE::resize(capacity);
             }
 
             ~ResizingVectorAdapter() override {}
@@ -1818,6 +1834,11 @@ namespace StringAdapter {
             void erase(const std::size_t pos, const std::size_t len) {         \
                 erase_(pos, len);                                              \
             }                                                                  \
+\
+            const char index_to_char(const std::size_t index) const override { \
+                return operator[](index);    \
+            } \
+\
                                                                                \
             Shared<char> c_str() override {                                    \
                 return c_str_();                                               \
