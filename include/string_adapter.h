@@ -818,14 +818,14 @@ namespace StringAdapter {
             virtual BasicStringAdapter<T> * clone() = 0;
             virtual const BasicStringAdapter<T> * clone() const = 0;
 
-            void THROW_SIZE() const {
-                throw std::runtime_error("INDEX OUT OF RANGE");
+            void THROW(const char * what) const {
+                throw std::runtime_error(what);
             }
 
             void CHECK_SIZE(const std::size_t index,
                             const std::size_t size) const {
                 if (index >= size)
-                    THROW_SIZE();
+                    THROW("INDEX OUT OF RANGE");
             }
 
             virtual T & get_item_at_index(const std::size_t index) = 0;
@@ -1569,7 +1569,7 @@ namespace StringAdapter {
 
     template <typename T>
     struct VectorAdapter : public BasicStringAdapter<T> {
-            mutable std::vector<T> vector;
+            mutable std::shared_ptr<std::vector<T>> vector;
 
             using BASE = BasicStringAdapter<T>;
             BASIC_STRING_ADAPTER_USING_BASE(BASE);
@@ -1577,14 +1577,16 @@ namespace StringAdapter {
 
             VectorAdapter(const VectorAdapter & other) :
                 BasicStringAdapter<T>(other) {
-                vector = other.vector;
+                vector = std::make_shared<std::vector<T>>();
+                *vector = *other.vector;
                 new_line = other.new_line;
                 eof = other.eof;
             }
 
             const VectorAdapter & operator=(const VectorAdapter & other) {
                 BasicStringAdapter<T>::operator=(other);
-                vector = other.vector;
+                vector = std::make_shared<std::vector<T>>();
+                *vector = *other.vector;
                 new_line = other.new_line;
                 eof = other.eof;
                 return *this;
@@ -1612,49 +1614,59 @@ namespace StringAdapter {
                 this->eof = eof;
 
                 if (ptr == nullptr || length == 0) {
-                    this->vector = std::move(std::vector<T>(1));
-                    this->vector[0] = get_end_of_file();
+                    this->vector = std::make_shared<std::vector<T>>(1);
+                    (*vector)[0] = get_end_of_file();
                     return;
                 }
 
-                vector = std::move(std::vector<T>(length + 1));
+                this->vector = std::make_shared<std::vector<T>>(length + 1);
                 if (length != 0) {
                     for (std::size_t s = 0; s < length; s++) {
-                        vector[s] = ptr[s];
+                        (*vector)[s] = ptr[s];
                     }
-                    vector[length] = get_end_of_file();
+                    (*vector)[length] = get_end_of_file();
                 }
             }
 
             T & get_item_at_index(const std::size_t index) override {
-                CHECK_SIZE(index, vector.size());
-                return vector[index];
+                CHECK_SIZE(index, (*vector).size());
+                return (*vector)[index];
             }
 
             const T &
             get_item_at_index(const std::size_t index) const override {
-                CHECK_SIZE(index, vector.size());
-                return vector[index];
+                CHECK_SIZE(index, (*vector).size());
+                return (*vector)[index];
             }
 
             Shared<T> data() override {
-                return {vector.data(), length()};
+                return {vector->data(), length(), [](auto p) {}};
             }
 
             const CShared<T> data() const override {
-                return {vector.data(), length()};
+                return {vector->data(), length(), [](auto p) {}};
+            }
+
+            Shared<T> c_str_() override {
+                auto tmp = vector;
+                return {vector->data(), length(), [tmp](auto p) {}};
+            }
+
+            const CShared<T> c_str_() const override {
+                auto tmp = vector;
+                return {vector->data(), length(), [tmp](auto p) {}};
             }
 
             std::vector<T> * data_as_vector() override {
-                return &vector;
+                return vector.get();
             }
 
             const std::vector<T> * data_as_vector() const override {
-                return &vector;
+                return vector.get();
             }
 
             const std::size_t length() const override {
-                return vector.size() - 1;
+                return vector->size() - 1;
             }
 
             void resize(const std::size_t capacity) override {
@@ -1663,8 +1675,8 @@ namespace StringAdapter {
                     if (capacity == 0) {
                         erase_(0, len_);
                     } else {
-                        vector.resize(capacity+1);
-                        vector.shrink_to_fit();
+                        vector->resize(capacity+1);
+                        vector->shrink_to_fit();
                     }
                 }
             }
@@ -1674,7 +1686,7 @@ namespace StringAdapter {
                 auto * vec = what.data_as_vector();
                 if (vec != nullptr) {
                     // we can take advantage of vector
-                    vector.insert(vector.begin() + clamp_pos(pos), vec->begin(),
+                    vector->insert(vector->begin() + clamp_pos(pos), vec->begin(),
                                   vec->end() - 1);
                 } else {
                     const CShared<T> p = what.data();
@@ -1685,7 +1697,7 @@ namespace StringAdapter {
                             v[s] = p.ptr()[s];
                         }
                     }
-                    vector.insert(vector.begin() + clamp_pos(pos), v.begin(),
+                    vector->insert(vector->begin() + clamp_pos(pos), v.begin(),
                                   v.end());
                 }
             }
@@ -1707,10 +1719,10 @@ namespace StringAdapter {
                 const std::size_t l = clamp_length(len_, p, length);
 
                 if (pos == 0 && l == len_) {
-                    vector = std::move(std::vector<T>(1));
-                    vector[0] = get_end_of_file();
+                    this->vector = std::make_shared<std::vector<T>>(1);
+                    (*vector)[0] = get_end_of_file();
                 } else if (l != 0) {
-                    vector.erase(vector.begin() + p, vector.begin() + l);
+                    vector->erase(vector->begin() + p, vector->begin() + l);
                 }
             }
 
@@ -1726,14 +1738,14 @@ namespace StringAdapter {
 
             void insert_(const BasicStringAdapter<T> & what,
                          const std::size_t pos) override {
-                vector.reserve(length() + what.length() + 1);
+                vector->reserve(length() + what.length() + 1);
                 BASE::insert_(what, pos);
             }
 
             virtual void erase_(const std::size_t pos,
                                 const std::size_t length) override {
                 BASE::erase_(pos, length);
-                vector.shrink_to_fit();
+                vector->shrink_to_fit();
             }
 
             void resize(const std::size_t capacity) override {

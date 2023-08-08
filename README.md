@@ -193,9 +193,31 @@ virtual Shared<T> c_str_()
 virtual const CShared<T> c_str_() const
 
 virtual Shared<char> c_str()
-virtual const Shared<char> c_str() const
+virtual const CShared<char> c_str() const
 ```
 same usage as `data()` and `data_is_allocated()`
+
+`c_str()` is expected to return data that `outlives` its owner:
+
+```cpp
+CharVectorAdapter a = "hi";
+// a holds a ref to shared_ptr<vector<char>>
+
+auto a_data = a.data();
+// a_data holds no ref to shared_ptr<vector<char>> since vec->data() already returns char* thus we can directly reference it, avoiding a useless copy
+
+auto a_c_str = a.c_str();
+// a_c_str same as a_data but we hold a ref to shared_ptr<vector<char>> to uphold expectations of b_c_str and a_c_str can both be used out of scope
+
+CharListAdapter b = "hi";
+// b holds no ref to list<char>
+
+auto b_data = b.data();
+// b_data holds no ref to list<char>
+
+auto b_c_str = b.c_str();
+// b_c_str holds no ref to list<char> since we must convert from list<char> to char*
+```
 
 returns the contents as a `Shared<char>` which can be accessed as a `char *` string via `ptr()`
 
