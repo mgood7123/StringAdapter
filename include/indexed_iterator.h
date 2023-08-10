@@ -190,7 +190,7 @@
 namespace IndexedIterator {
 
     struct iterator_base_obj {
-            using difference_type = std::size_t;
+            using difference_type = std::ptrdiff_t;
             virtual std::ostream & toStream(std::ostream & os) const = 0;
             virtual bool is_const() const = 0;
             virtual const void * get_origin() const = 0;
