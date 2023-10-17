@@ -23,8 +23,12 @@ macro(testBuilder_add_dependency testName dependencyName)
     set(testBuilder_DEPENDENCY_LIST_${testName} ${testBuilder_DEPENDENCY_LIST_${testName}};${dependencyName})
 endmacro()
 
-macro(testBuilder_add_compile_option testName dependencyName)
-    set(testBuilder_COMPILE_OPTIONS_${testName} ${testBuilder_COMPILE_OPTIONS_${testName}};${dependencyName})
+macro(testBuilder_add_compile_option testName option)
+    set(testBuilder_COMPILE_OPTIONS_${testName} ${testBuilder_COMPILE_OPTIONS_${testName}};${option})
+endmacro()
+
+macro(testBuilder_add_link_option testName option)
+    set(testBuilder_LINK_OPTIONS_${testName} ${testBuilder_LINK_OPTIONS_${testName}};${option})
 endmacro()
 
 macro(testBuilder_set_current_working_directory workingDirectory)
@@ -48,6 +52,10 @@ macro(testBuilder_build testName outDirectory)
 
     if (testBuilder_COMPILE_OPTIONS_${testName})
         target_compile_options(${testName} PUBLIC ${testBuilder_COMPILE_OPTIONS_${testName}})
+    endif()
+    
+    if (testBuilder_LINK_OPTIONS_${testName})
+        target_link_options(${testName} PUBLIC ${testBuilder_LINK_OPTIONS_${testName}})
     endif()
     
     if (testBuilder_LIBRARIES_LIST_${testName})
@@ -85,6 +93,10 @@ macro(testBuilder_build_static_library testName)
         target_compile_options(${testName} PUBLIC ${testBuilder_COMPILE_OPTIONS_${testName}})
     endif()
     
+    if (testBuilder_LINK_OPTIONS_${testName})
+        target_link_options(${testName} PUBLIC ${testBuilder_LINK_OPTIONS_${testName}})
+    endif()
+
     if (testBuilder_LIBRARIES_LIST_${testName})
         target_link_libraries(${testName} ${testBuilder_LIBRARIES_LIST_${testName}})
     endif()
@@ -105,6 +117,10 @@ macro(testBuilder_build_shared_library testName)
         target_compile_options(${testName} PUBLIC ${testBuilder_COMPILE_OPTIONS_${testName}})
     endif()
     
+    if (testBuilder_LINK_OPTIONS_${testName})
+        target_link_options(${testName} PUBLIC ${testBuilder_LINK_OPTIONS_${testName}})
+    endif()
+
     if (testBuilder_LIBRARIES_LIST_${testName})
         target_link_libraries(${testName} ${testBuilder_LIBRARIES_LIST_${testName}})
     endif()
